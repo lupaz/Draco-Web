@@ -1,0 +1,861 @@
+package Dplusplus;
+
+import AST.Nodo;
+//import CJS.Ejecucion.Cadena;
+import draco_web.InterfazD;
+import java_cup.runtime.Symbol;
+
+//PARSER 
+parser code
+{://Codigo visible
+    public Nodo raiz;
+    public String nombreArch;
+    
+public void syntax_error(Symbol s){
+        String error="ERROR SINTACTICO RECUPERABLE: Se esperava otro token en lugar de ->  "+s.value+ "  L: "+(s.left+1)+" C: "+(s.right+1)+ " DOC: "+nombreArch;
+        InterfazD.listaErrores.add(error);
+        System.out.println(error);
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        String error="ERROR SINTACTICO NO RECUPERABLE: Se esperava otro token en lugar de ->  "+s.value+"  L: "+(s.left+1)+" C: "+(s.right+1)+ " DOC: "+nombreArch;
+        InterfazD.listaErrores.add(error);
+        System.out.println(error);
+    }
+:}
+
+action code
+{://Codigo de usuario
+    String tmp="";
+:}
+
+
+terminal String entero,decimal,booleano,caracter,cadena,vacio,nulo,principal,impor,struct;
+terminal id, enter,decim,bool,carac,cad;
+terminal PAR_A, PAR_C, LLAV_A, LLAV_C,COR_A,COR_C, COMA, DPUNTOS, PUNTO, PYCOMA;
+terminal MAS,MENOS,DIV,POR,POT,INC,DEC,OR,AND,NOT, ASIG, PREG,ARK;
+terminal MAYOR,MENOR,MAYOR_I,MENOR_I,IGUAL,DIFERENTE;
+terminal String si,sino,para,mientras,detener,continuar,retornar,imprimir,punto,cuadrado,ovalo,linea;
+
+
+
+///////////////////////// NO TERMINALES --------------------------------------->
+
+nonterminal Nodo  INICIO, IMPOR, IMPO, CUERPO, CUERPO2, CUE, CUE2, TIPO, L_EXP, L_PAR, LOG, REL, ARIT;
+nonterminal Nodo  OP, L_DEC, RES, RES2, L_ID, DIM, AS, AS2, L_AS, DECC, DA_VAR, DA_ARR, AS_VAR, AS_ARR;
+nonterminal Nodo  DAS, RET, LLAMADA, SIN,SINO,OP_REL, L_EXPP,L_PARR,SINOO, AS_VAR_EST, AS_ARR_EST; 
+
+
+
+//agregamos la precedencia
+precedence left PREG;
+precedence left OR;
+precedence left AND;
+precedence nonassoc MAYOR,MENOR,MAYOR_I,MENOR_I,IGUAL,DIFERENTE;
+precedence left INC,DEC;
+precedence left MAS, MENOS;
+precedence left POR, DIV;
+precedence right POT;
+precedence right NOT;
+precedence nonassoc PAR_A,PAR_C;
+
+
+start with INICIO;
+
+
+INICIO ::= IMPOR:imp CUERPO:cue
+                {:
+                    raiz = new Nodo(Cadena.INICIO);
+                    raiz.Hijos.add(imp);
+                    raiz.Hijos.add(cue);
+                    System.out.println("===========================Analisis Correcto==============================");
+                :}
+;
+
+CUERPO ::= CUERPO:cu CUE:cue
+                {:
+                    cu.Hijos.add(cue);
+                    RESULT = cu;
+                :}
+            | CUE:cue
+                {:
+                    RESULT= new Nodo(Cadena.CUERPO);
+                    RESULT.Hijos.add(cue);
+                :}
+;
+
+IMPOR ::= IMPO:impo
+                {:
+                    RESULT = impo;
+                :}
+        |
+                {:
+                    RESULT = new Nodo(Cadena.IMPORT);
+                :}
+;
+
+IMPO ::= IMPO:im impor PAR_A cad:ca PAR_C PYCOMA
+                {:
+                    im.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT = im;
+                :}
+        | impor PAR_A cad:ca PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.IMPORT);
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                :} 
+;
+
+CUE ::= struct id:ide LLAV_A L_DEC:dec LLAV_C 
+                {:
+                    RESULT = new Nodo(Cadena.STRUCT);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(dec);
+                :}
+        | vacio:tip id:ide PAR_A L_PAR:lpar PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT= new Nodo(Cadena.DEC_MET);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(lpar);
+                    RESULT.Hijos.add(cue);
+                :}
+        | TIPO:tip id:ide  PAR_A L_PAR:lpar PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT= new Nodo(Cadena.DEC_FUN);
+                    RESULT.Hijos.add(tip);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(lpar);
+                    RESULT.Hijos.add(cue);
+                :}
+        | vacio principal:pri  PAR_A  PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT= new Nodo(Cadena.PRINCIPAL);
+                    RESULT.Hijos.add(new Nodo(pri,(Object)pri,prileft+1,priright+1));
+                    RESULT.Hijos.add(cue);
+                :}
+        | DA_VAR:da
+                {:
+                    RESULT=da;
+                :}
+        | AS_VAR:da
+                {:
+                    RESULT=da;
+                :}
+        | DA_ARR:da
+                {:
+                    RESULT=da;
+                :}
+        | AS_ARR:da
+                {:
+                    RESULT=da;
+                :}
+        | AS_VAR_EST:da
+                {:
+                    RESULT=da;
+                :}
+        | AS_ARR_EST:da
+                {:
+                    RESULT=da;
+                :}
+        | error PYCOMA
+        | error LLAV_C                
+;
+
+DA_VAR ::= TIPO:tip L_ID:lid RES:res PYCOMA
+                {:
+                    RESULT= new Nodo(Cadena.DA_VAR);
+                    RESULT.Hijos.add(tip);
+                    RESULT.Hijos.add(lid);
+                    RESULT.Hijos.add(res);
+                :}
+;
+
+AS_VAR ::= id:ide ASIG LOG:log PYCOMA 
+                {:
+                    RESULT= new Nodo(Cadena.AS_VAR);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+DA_ARR ::= TIPO:tip id:ide DIM:dim RES2:res PYCOMA 
+                {:
+                    RESULT= new Nodo(Cadena.DA_ARR);
+                    RESULT.Hijos.add(tip);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(dim);
+                    RESULT.Hijos.add(res);
+                :}
+;
+
+AS_ARR ::= id:ide DIM:dim ASIG LOG:log PYCOMA 
+                {:
+                    RESULT= new Nodo(Cadena.AS_ARR);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(dim);
+                    RESULT.Hijos.add(log);
+                :}
+        | id:ide DIM:dim PUNTO id:ide2 ASIG LOG:log PYCOMA
+                {:
+                    RESULT= new Nodo(Cadena.AS_ARR2);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(dim);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(log);
+                :}
+        | id:ide DIM:dim PUNTO id:ide2 DIM:dim2 ASIG LOG:log PYCOMA
+                {:
+                    RESULT= new Nodo(Cadena.AS_ARR3);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(dim);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(dim2);
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+AS_VAR_EST ::= id:ide PUNTO id:ide2 ASIG LOG:log PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.AS_VAR_EST);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+AS_ARR_EST ::= id:ide PUNTO id:ide2 DIM:dim ASIG LOG:log  PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.AS_ARR_EST);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(dim);
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+TIPO ::= cadena:ca
+                {:
+                    RESULT = new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1);
+                :}
+        | booleano:ca
+                {:
+                    RESULT = new Nodo(Cadena.booleano,(Object)ca,caleft+1,caright+1);
+                :}
+        | entero:ca
+                {:
+                    RESULT = new Nodo(Cadena.entero,(Object)ca,caleft+1,caright+1);
+                :}
+        | decimal:ca
+                {:
+                    RESULT = new Nodo(Cadena.decimal,(Object)ca,caleft+1,caright+1);
+                :}
+        | caracter:ca
+                {:
+                    RESULT = new Nodo(Cadena.caracter,(Object)ca,caleft+1,caright+1);
+                :}
+        | id:ca
+                {:
+                    RESULT = new Nodo(Cadena.id,(Object)ca,caleft+1,caright+1);
+                :}
+;
+
+RES ::= ASIG LOG:log
+                {:
+                    RESULT = new Nodo(Cadena.RES);
+                    RESULT.Hijos.add(log);
+                :}
+       |
+                {:
+                    RESULT = new Nodo(Cadena.RES);
+                :}
+;
+
+RES2 ::= ASIG AS:as
+                {:
+                    RESULT = new Nodo(Cadena.RES2);
+                    RESULT.Hijos.add(as);
+                :}
+        |
+                {:
+                    RESULT = new Nodo(Cadena.RES2);
+                :}
+;
+
+AS ::= LLAV_A AS2:as LLAV_C 
+                {:
+                    RESULT=as;
+                :}
+;
+
+AS2 ::= L_AS:las
+                {:
+                    RESULT=las;
+                :}
+        | L_EXP:les
+                {:
+                    RESULT=les;
+                :}
+;
+
+L_AS ::= L_AS:las COMA AS:as
+                {:
+                    las.Hijos.add(as);
+                     RESULT = las;
+                :}
+        | AS:as
+                {:
+                    RESULT = new Nodo(Cadena.L_AS);
+                    RESULT.Hijos.add(as);
+                :}
+;
+
+DIM ::= DIM:dim COR_A LOG:log COR_C
+                {:
+                    dim.Hijos.add(log);
+                    RESULT = dim;
+                :}
+        | COR_A LOG:log COR_C
+                {:
+                    RESULT= new Nodo(Cadena.DIM);
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+L_DEC ::= L_DEC:ld DECC:dec
+                {:
+                    ld.Hijos.add(dec);
+                    RESULT = ld;
+                :}
+        | DECC:dec
+                {:
+                    RESULT = new Nodo(Cadena.L_DEC);
+                    RESULT.Hijos.add(dec);                    
+                :}
+;
+
+DECC ::= DA_VAR:da
+                {:
+                    RESULT = da;
+                :}
+        |DA_ARR:da
+                {:
+                    RESULT = da;
+                :}
+;
+
+L_ID ::= L_ID:lid COMA id:ide
+                {:
+                    lid.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT= lid;
+                :}
+        | id:ide
+                {:
+                    RESULT= new Nodo(Cadena.L_IDS);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                :}
+;
+
+L_EXP ::= L_EXPP:lex
+                {:
+                    RESULT = lex; 
+                :}
+        |
+                {:
+                    RESULT = new Nodo(Cadena.L_EXP);
+                :}
+;
+
+L_EXPP ::= L_EXPP:les COMA LOG:log
+                {:
+                    les.Hijos.add(log);
+                    RESULT = les;
+                :}
+        | LOG:log
+                {:
+                    RESULT = new Nodo(Cadena.L_EXP);
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+L_PAR ::= L_PARR:lar
+                {:
+                    RESULT=lar;
+                :}
+    |
+                {:
+                    RESULT = RESULT = new Nodo(Cadena.L_PAR);
+                :}
+;
+
+
+L_PARR ::= L_PARR:lar COMA TIPO:tip id:ide
+                {:
+                    Nodo PAR = new Nodo(Cadena.PAR);
+                    PAR.Hijos.add(tip);
+                    PAR.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    lar.Hijos.add(PAR);
+                    RESULT = lar;
+                :}
+        | TIPO:tip  id:ide
+                {:
+                    RESULT= new Nodo(Cadena.L_PAR);
+                    Nodo PAR = new Nodo(Cadena.PAR);
+                    PAR.Hijos.add(tip);
+                    PAR.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(PAR);
+                :}
+;
+
+CUERPO2 ::= CUERPO2:cu CUE2:cue
+                {:
+                    cu.Hijos.add(cue);
+                    RESULT = cu;
+                :}
+        | CUE2:cue
+                {:
+                    RESULT= new Nodo(Cadena.CUERPO2);
+                    RESULT.Hijos.add(cue);
+                :}
+;
+
+CUE2 ::= si:ide PAR_A LOG:log PAR_C LLAV_A CUERPO2:cue LLAV_C SIN:sin
+                {:
+                    RESULT = new Nodo(Cadena.SI);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(cue);
+                    RESULT.Hijos.add(sin);
+                :}
+        | mientras:ide PAR_A LOG:log PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT = new Nodo(Cadena.MIENTRAS);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(cue);
+                :}
+        | para:ide PAR_A DAS:da PYCOMA LOG:log PYCOMA OP:op PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT = new Nodo(Cadena.PARA);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(da);
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(op);
+                    RESULT.Hijos.add(cue);
+                :}
+        | detener:ide PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.DETENER);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | continuar:ide PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.CONTINUAR);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | retornar:ide RET:re PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.RETORNAR);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(re);
+                :}
+        | imprimir:ide PAR_A LOG:log PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.DETENER);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                :}
+        | OP:op PYCOMA
+                {:
+                    RESULT = op;
+                :}
+        | AS_VAR_EST:da
+                {:
+                    RESULT = da;
+                :}
+        | AS_ARR_EST:da
+                {:
+                    RESULT = da;
+                :}
+        | DA_VAR:da
+                {:
+                    RESULT = da;
+                :}
+        | AS_VAR:da
+                {:
+                    RESULT = da;
+                :}
+        | DA_ARR:da
+                {:
+                    RESULT = da;
+                :}
+        | AS_ARR:da
+                {:
+                    RESULT = da;
+                :}
+        | punto:ide PAR_A enter:e1 COMA enter:e2 COMA cad:ca COMA enter:e3 PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.PUNTO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e1,e1left+1,e1right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e2,e2left+1,e2right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e3,e3left+1,e3right+1));    
+                :}
+        | cuadrado:ide PAR_A enter:e1 COMA enter:e2 COMA cad:ca COMA enter:e3 COMA enter:e4 PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.CUADRADO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e1,e1left+1,e1right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e2,e2left+1,e2right+1));    
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e3,e3left+1,e3right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e4,e4left+1,e4right+1));
+                :}
+        | ovalo:ide PAR_A enter:e1 COMA enter:e2 COMA cad:ca COMA enter:e3 COMA enter:e4 PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.CUADRADO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e1,e1left+1,e1right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e2,e2left+1,e2right+1));    
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e3,e3left+1,e3right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e4,e4left+1,e4right+1));
+                :}
+        | cadena:ide PAR_A enter:e1 COMA enter:e2 COMA cad:ca COMA cad:ca2 PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.CUADRADO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e1,e1left+1,e1right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e2,e2left+1,e2right+1));    
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca2,ca2left+1,ca2right+1));
+                :}
+        | linea:ide PAR_A enter:e1 COMA enter:e2 COMA enter:e3 COMA enter:e4 COMA cad:ca COMA enter:e5 PAR_C PYCOMA
+                {:
+                    RESULT = new Nodo(Cadena.CUADRADO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e1,e1left+1,e1right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e2,e2left+1,e2right+1));    
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e3,e3left+1,e3right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e4,e4left+1,e4right+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)e5,e5left+1,e5right+1));                    
+                :}
+        | LLAMADA:lla PYCOMA
+                {:
+                    RESULT = lla;
+                :}
+        | error PYCOMA
+        | error LLAV_C
+;
+
+SIN ::= SINOO:sin
+                {:
+                    RESULT = sin;
+                :}
+        |   
+                {:
+                    RESULT = new Nodo(Cadena.SIN);
+                :}
+;
+
+SINOO ::= SINOO:sin SINO:sino
+                {:
+                    sin.Hijos.add(sino);
+                    RESULT = sin;
+                :}
+        |SINO:sin
+                {:
+                    RESULT = new Nodo(Cadena.SIN);
+                    RESULT.Hijos.add(sin);
+                :}
+;
+
+SINO ::= sino si:ide PAR_A LOG:log PAR_C LLAV_A CUERPO2:cue LLAV_C
+                {:
+                    RESULT = new Nodo(Cadena.SINO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(cue);
+                :}
+        | sino:ide LLAV_A CUERPO2:cue LLAV_C 
+                {:
+                    RESULT =  new Nodo(Cadena.SINO);
+                    RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(cue);    
+                :}
+;
+
+DAS ::= entero:ca id:ide ASIG LOG:log
+                {:
+                    RESULT= new Nodo(Cadena.DA_VAR);
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    Nodo tmp= new Nodo(Cadena.RES);
+                    tmp.Hijos.add(log);
+                    RESULT.Hijos.add(tmp);
+                :}
+        | decimal:ca id:ide ASIG LOG:log
+                {:
+                    RESULT= new Nodo(Cadena.DA_VAR);
+                    RESULT.Hijos.add(new Nodo(Cadena.decimal,(Object)ca,caleft+1,caright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    Nodo tmp= new Nodo(Cadena.RES);
+                    tmp.Hijos.add(log);
+                    RESULT.Hijos.add(tmp);
+                :}
+        | id:ide ASIG LOG:log
+                {:
+                    RESULT= new Nodo(Cadena.AS_VAR);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                :}
+;
+
+OP ::= id:ide INC:ide2
+                {:
+                    RESULT= new Nodo(Cadena.OP);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.inc,(Object)ide2,ide2left+1,ide2right+1));
+                :}
+        | id:ide DEC:ide2
+                {:
+                    RESULT= new Nodo(Cadena.OP);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(new Nodo(Cadena.dec,(Object)ide2,ide2left+1,ide2right+1));
+                :}
+;
+
+RET ::= LOG:log
+                {:
+                    RESULT = new Nodo(Cadena.RET);
+                    RESULT.Hijos.add(log);
+                :}
+        |
+                {:
+                    RESULT = new Nodo(Cadena.RET);
+                :}
+;
+
+LLAMADA ::= id:ide PAR_A L_EXP:les PAR_C
+                {:
+                    RESULT = new Nodo(Cadena.LLAMADA);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(les);
+                :}
+;
+
+LOG ::=   LOG:log OR:ide REL:rel
+                {:
+                    RESULT = new Nodo(Cadena.LOG);
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(new Nodo(Cadena.or,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(rel);
+                :}
+        | LOG:log AND:ide REL:rel
+                {:
+                    RESULT = new Nodo(Cadena.LOG);
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(new Nodo(Cadena.or,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(rel);
+                :}
+        | LOG:log PREG:ide LOG:log2 DPUNTOS LOG:log3
+                {:
+                    RESULT = new Nodo(Cadena.LOG);
+                    RESULT.Hijos.add(log);
+                    RESULT.Hijos.add(new Nodo("?",(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log2);
+                    RESULT.Hijos.add(log3);
+                :}
+        | REL:rel
+                {:
+                    RESULT = new Nodo(Cadena.LOG);
+                    RESULT.Hijos.add(rel);
+                :}
+;
+
+
+REL ::= ARIT:ar1 OP_REL:re ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.REL);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(re);
+                    RESULT.Hijos.add(ar2);
+                :}
+    | ARIT:ar
+                {:
+                    RESULT = new Nodo(Cadena.REL);
+                    RESULT.Hijos.add(ar);
+                :}
+;
+
+OP_REL ::= IGUAL:ide
+                {:
+                    RESULT  = new Nodo(Cadena.igual,(Object)ide,ideleft+1,ideright+1);
+                :}
+        | DIFERENTE:ide
+                {:
+                    RESULT  = new Nodo(Cadena.diferente,(Object)ide,ideleft+1,ideright+1);
+                :}
+        | MAYOR:ide
+                {:
+                    RESULT  = new Nodo(Cadena.mayor,(Object)ide,ideleft+1,ideright+1);
+                :}
+        | MENOR:ide
+                {:
+                    RESULT  = new Nodo(Cadena.menor,(Object)ide,ideleft+1,ideright+1);
+                :}
+        | MAYOR_I:ide
+                {:
+                    RESULT  = new Nodo(Cadena.mayor_i,(Object)ide,ideleft+1,ideright+1);
+                :}
+        | MENOR_I:ide
+                {:
+                    RESULT  = new Nodo(Cadena.menor_i,(Object)ide,ideleft+1,ideright+1);
+                :}
+;
+
+ARIT ::= ARIT:ar1 MAS:ide ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(new Nodo(Cadena.mas,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(ar2);
+                :}
+        | ARIT:ar1 MENOS:ide ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(new Nodo(Cadena.menos,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(ar2);
+                :}
+        | ARIT:ar1 POR:ide ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(new Nodo(Cadena.por,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(ar2);
+                :}
+        | ARIT:ar1 DIV:ide ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(new Nodo(Cadena.div,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(ar2);
+                :}
+        | ARIT:ar1 POT:ide ARIT:ar2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(ar1);
+                    RESULT.Hijos.add(new Nodo(Cadena.pot,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(ar2);
+                :}
+        | NOT:ide LOG:log
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.not,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                :}
+        | MENOS:ide LOG:log
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.menos,(Object)ide,ideleft+1,ideright+1));
+                    RESULT.Hijos.add(log);
+                :}
+        | PAR_A LOG:log PAR_C
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(log);
+                :}
+        | LLAMADA:lla
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(lla); 
+                :}
+        | OP:op
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(op);
+                :}
+        | id:ide PUNTO id:ide2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    Nodo tmp = new Nodo(Cadena.ACC_EST);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(tmp);
+                :}
+        |id:ide PUNTO id:ide2 DIM:dim
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    Nodo tmp = new Nodo(Cadena.ACC_MAT_EST);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    tmp.Hijos.add(dim);
+                    RESULT.Hijos.add(tmp);
+                :}
+        | id:ide DIM:dim
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    Nodo tmp = new Nodo(Cadena.ACC_MAT);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    tmp.Hijos.add(dim);
+                    RESULT.Hijos.add(tmp);
+                :}
+        | id:ide DIM:dim PUNTO id:ide2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    Nodo tmp = new Nodo(Cadena.ACC_MAT2);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    tmp.Hijos.add(dim);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    RESULT.Hijos.add(tmp);
+                :}
+        | id:ide DIM:dim PUNTO id:ide2 DIM:dim2
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    Nodo tmp = new Nodo(Cadena.ACC_MAT3);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                    tmp.Hijos.add(dim);
+                    tmp.Hijos.add(new Nodo(Cadena.id,(Object)ide2,ide2left+1,ide2right+1));
+                    tmp.Hijos.add(dim2);    
+                    RESULT.Hijos.add(tmp);
+                :}
+        | id:ide
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.id,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | enter:ide
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.entero,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | decim:ide
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.decimal,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | bool:ide
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.booleano,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | carac:ide
+                 {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.caracter,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | cad:ide
+                 {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.cadena,(Object)ide,ideleft+1,ideright+1));
+                :}
+        | nulo:ide
+                {:
+                    RESULT = new Nodo(Cadena.ARIT);
+                    RESULT.Hijos.add(new Nodo(Cadena.nulo,(Object)ide,ideleft+1,ideright+1));
+                :}
+;
+
+
