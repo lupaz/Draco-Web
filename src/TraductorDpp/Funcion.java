@@ -15,15 +15,17 @@ import java.util.ArrayList;
 public class Funcion {
         public String Nombre;
         public String Tipo;
-        public ArrayList<Parametro> Parametros;
+        public ArrayList<Simbolo> variables;
         public Nodo Cuerpo;
+        public ArrayList<Parametro> Parametros;
         public String key; // aca vamos a generar la llave de la funcion para el polimorfismo.
 
-        public Funcion(String tipo, String nombre, Nodo cuerpo){
+        public Funcion(String tipo, String nombre,Nodo cuerpo){
             this.Nombre= nombre;
-            this.Cuerpo= cuerpo;
             this.Tipo = tipo;
+            this.Cuerpo=cuerpo;
             Parametros = new ArrayList<>();
+            variables = new ArrayList<>();
         }
 
         public int numPars()
@@ -39,6 +41,28 @@ public class Funcion {
         public Boolean exixtePar(String nombre){
             for(Parametro par : Parametros) {
                 if(par.getNombre().equals(nombre)){
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        public void addVariable(Simbolo sim) //Vamos a enviar lo parametros de esta forma tipo,nombre
+        {
+            variables.add(sim);
+        }
+        
+        public Simbolo getVariable(String nombre){
+            for(Simbolo sim : variables) {
+                if(sim.nombre.equals(nombre)){
+                    return sim;
+                }
+            }
+            return null;
+        }
+        public Boolean exixteVar(String nombre){
+            for(Simbolo sim : variables) {
+                if(sim.nombre.equals(nombre)){
                     return true;
                 }
             }

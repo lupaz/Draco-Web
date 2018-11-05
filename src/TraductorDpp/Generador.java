@@ -170,7 +170,7 @@ public class Generador {
     }
     //</editor-fold>
     
-    //<editor-fold desc="declaracion son asignacion global de arreglo">
+    //<editor-fold desc="declaracion con asignacion global de arreglo">
     
     static String inicio_dec_arr(String pos){
         String res="";
@@ -249,6 +249,52 @@ public class Generador {
         return ret;
     }
     
+    static String iniciar_vals_dec_arr_var( String pos, String tipo){
+        String ret = "";
+        ret += Cadena.tee_local_1000 + enter;
+
+        ret += Cadena.Add + enter;
+        ret += Cadena.set_local_1 + enter; //reservamos la memoria directamente
+        //ahora tenemos que ubicarnos de nuevo en la primera pos libre del arreglo
+        ret += Cadena.get_local_2 + enter;
+        ret += pos + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_calc + enter;
+        ret += Cadena.tee_local_2000 + enter; //almaceno el incio del arreglo
+        ret += Cadena.get_global_calc + enter;//obtengo el numero de dims
+        ret += Cadena.get_local_2000 + enter; // obtengo la pos inicial nuevamente
+        ret += Cadena.Add + enter; //le sumo el numero de dims
+        ret += "1" + enter; //
+        ret += Cadena.Add + enter; //sumamos uno , esto ya nos deja en la 1ra pos libre del arreglo 
+
+        String et_ini = generar_etq();
+        String et_fin = generar_etq();
+
+        ret += et_ini + " :\n";
+        //----------------------------
+        if(tipo.equals(Cadena.cadena)){
+            ret+= "-1"+enter;
+        }else{
+            ret+= "0"+enter;
+        }
+        //-----------------------------
+        ret += Cadena.tee_global_calc + enter;
+        ret += "1" + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_1000 + "\n";
+        ret += "1\n";
+        ret += Cadena.Diff + "\n";
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.br_if + et_fin + "\n";
+        ret += Cadena.br + et_ini + "\n";
+        ret += et_fin + " :\n";
+        ret += "0" + enter; //esto para que deje vacia la pila, despues de
+        ret += Cadena.Mult + enter;
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.set_local_2000 + enter;
+        return ret;
+    }
+    
     //la parte de asignacion:
     
     static String recuperar_pos_ini_arr(String pos){        
@@ -291,10 +337,201 @@ public class Generador {
     
     //</editor-fold>
     
-    //<editor-fold desc="declaracion y asignacion global de variables primitivas">
+    //<editor-fold desc="declaracion con asignacion local de arreglo">
+    
+    static String inicio_dec_arr_loc(String pos){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.set_local_calc+enter;
+        //hasta este punto ya dejamos el valor del heap donde inicia el arreglo en la pos de la variable
+        res+=Cadena.get_local_1+enter;
+        return res;
+    }
+    
+    static String setear_dim_dec_arr_loc(String dim){
+        String res="";        
+        res+=dim;
+        res+=Cadena.tee_global_calc+"\n";
+        res+="1\n";
+        res+=Cadena.Add+"\n";
+        res+=Cadena.tee_local_1+"\n";
+        return res;
+    } //esto siempre deja en pila auz el valor donde inician los valores del arreglo
+    
+    static String recuperar_dims_dec_arr_loc(String pos, String no_dim){    
+        String res="";        
+        res+=Cadena.get_local_0+enter; //esto servirar para rcuperar los valores de las dimensiones
+        res+=pos+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=no_dim+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_global_calc+enter;
+        return res;
+    }
+    
+    static String iniciar_vals_dec_arr_estr_loc( String pos, String tipo,String ambito){
+        String ret = "";
+        ret += Cadena.tee_local_1000 + enter;
+
+        ret += Cadena.Add + enter;
+        ret += Cadena.set_local_1 + enter;
+        ret += Cadena.get_local_0 + enter;
+        ret += pos + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_calc + enter;
+        ret += Cadena.tee_local_2000 + enter;
+        ret += Cadena.get_global_calc + enter;
+        ret += Cadena.get_local_2000 + enter;
+        ret += Cadena.Add + enter;
+        ret += "1" + enter;
+        ret += Cadena.Add + enter;
+
+        String et_ini = generar_etq();
+        String et_fin = generar_etq();
+
+        ret += et_ini + " :\n";
+        //hacemos el cambio de ambito
+        ret += Cadena.get_local_0 + enter;
+        ret += ambito + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.set_local_0;
+        //----------------------------
+        ret += Cadena.Call + Cadena.inicio_ + tipo + enter;
+        ret += Cadena.get_local_0 + enter;
+        ret += "0" + enter;//la pos 0 es donde se alamcena el valor de incio de la estructura
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_calc + enter; //recupero el valor (la posicion inical de la estructura)
+        // regresamos el ambito
+        ret += Cadena.get_local_0 + enter;
+        ret += ambito + enter;
+        ret += Cadena.Diff + enter;
+        ret += Cadena.set_local_0 + enter;
+        //-----------------------------
+        ret += Cadena.tee_global_calc + enter;
+        ret += "1" + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_1000 + "\n";
+        ret += "1\n";
+        ret += Cadena.Diff + "\n";
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.br_if + et_fin + "\n";
+        ret += Cadena.br + et_ini + "\n";
+        ret += et_fin + " :\n";
+        ret += "0" + enter; //esto para que deje vacia la pila, despues de
+        ret += Cadena.Mult + enter;
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.set_local_2000 + enter;
+        return ret;
+    }
+    
+    //se multiplican
+    
+    static String iniciar_vals_dec_arr_var_loc( String pos, String tipo){
+        String ret = "";
+        ret += Cadena.tee_local_1000 + enter;
+
+        ret += Cadena.Add + enter;
+        ret += Cadena.set_local_1 + enter; //reservamos la memoria directamente
+        //ahora tenemos que ubicarnos de nuevo en la primera pos libre del arreglo
+        ret += Cadena.get_local_0 + enter;
+        ret += pos + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_calc + enter;
+        ret += Cadena.tee_local_2000 + enter; //almaceno el incio del arreglo
+        ret += Cadena.get_global_calc + enter;//obtengo el numero de dims
+        ret += Cadena.get_local_2000 + enter; // obtengo la pos inicial nuevamente
+        ret += Cadena.Add + enter; //le sumo el numero de dims
+        ret += "1" + enter; //
+        ret += Cadena.Add + enter; //sumamos uno , esto ya nos deja en la 1ra pos libre del arreglo 
+
+        String et_ini = generar_etq();
+        String et_fin = generar_etq();
+
+        ret += et_ini + " :\n";
+        //----------------------------
+        if(tipo.equals(Cadena.cadena)){
+            ret+= "-1"+enter;
+        }else{
+            ret+= "0"+enter;
+        }
+        //-----------------------------
+        ret += Cadena.tee_global_calc + enter;
+        ret += "1" + enter;
+        ret += Cadena.Add + enter;
+        ret += Cadena.get_local_1000 + "\n";
+        ret += "1\n";
+        ret += Cadena.Diff + "\n";
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.br_if + et_fin + "\n";
+        ret += Cadena.br + et_ini + "\n";
+        ret += et_fin + " :\n";
+        ret += "0" + enter; //esto para que deje vacia la pila, despues de
+        ret += Cadena.Mult + enter;
+        ret += Cadena.tee_local_1000 + enter;
+        ret += Cadena.set_local_2000 + enter;
+        return ret;
+    }
+    
+    //la parte de asignacion:
+    
+    static String recuperar_pos_ini_arr_loc(String pos){        
+        String res="";
+        
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        
+        //inicia la recuperación
+        res+=Cadena.get_local_0+enter;
+        res+=pos+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.get_global_calc+enter; //con esto obtengo el numero de dims
+        //recuepero de nuevo el puntero y
+        res+=Cadena.get_local_0+enter;
+        res+=pos+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+= Cadena.Add+enter; //le sumamos el numero de dim a la pos
+        res+="1"+enter;
+        res+=Cadena.Add+enter;   //con esto ya dejo la dirccion de memoria de la primera pos libre del arreglo      
+        return res;
+    }
+    
+    static  String asignar_val_arr_loc(String val){
+        String res="";        
+        res+=val;
+        res+= Cadena.tee_global_calc+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;        
+        return  res;
+    }
+    
+    static String finalizar_asignacion_arr_loc(){
+        String res="";
+        res+=Cadena.set_local_1+enter;
+        return  res;
+    }
+    
+    //</editor-fold>
+    
+    //<editor-fold desc="declaracion y asignacion global y local de variables primitivas">
     static String declara_asigna_var_global(String pos, String val){        
         String res="";
         res += Cadena.get_local_2 + enter;
+        res += pos + enter;
+        res += Cadena.Add + enter;
+        res += val ;
+        res += Cadena.set_local_calc + enter;
+        return res;        
+    }
+    
+    static String declara_asigna_var_local(String pos, String val){        
+        String res="";
+        res += Cadena.get_local_0 + enter;
         res += pos + enter;
         res += Cadena.Add + enter;
         res += val ;
@@ -322,6 +559,29 @@ public class Generador {
         return res;
     } 
     
+   static String declara_var_local(String pos, String tipo){    
+        String res="";
+        switch(tipo){        
+            case Cadena.cadena:
+                res+=Cadena.get_local_0+enter;
+                res+=pos+enter;
+                res+=Cadena.Add+enter;
+                res+="-1"+enter;
+                res+=Cadena.set_local_calc+enter;
+                break;
+            default:
+                res+=Cadena.get_local_0+enter;
+                res+=pos+enter;
+                res+=Cadena.Add+enter;
+                res+="0"+enter;
+                res+=Cadena.set_local_calc+enter;
+        }
+        return res;
+    }
+    
+    //</editor-fold>
+    
+    //<editor-fold desc="Declaracion y Asigacion de estructuras locales y globales">
     static String declara_struct_global(String pos , String tipo){
         String res="";
         res += Cadena.get_local_2 + enter;
@@ -335,7 +595,32 @@ public class Generador {
         res += Cadena.set_local_calc+enter;
         return res;
     }
-    
+     
+    static String declara_struct_local(String pos , String tipo,String ambito){
+        String res="";
+        res += Cadena.get_local_0 + enter;
+        res += pos + enter;
+        res += Cadena.Add + enter;
+        //hacemos el cambio de ambito
+        res+= Cadena.get_local_0+enter;
+        res+= ambito+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.set_local_0+enter;
+        res += Cadena.Call+Cadena.inicio_+tipo+enter; //si hay cambio de ambito por que es local
+        res += Cadena.get_local_0 + enter;
+        res += "0" + enter;//la pos 0 es donde se alamcena el valor de incio de la estructura
+        res += Cadena.Add + enter;
+        res += Cadena.get_local_calc + enter; //recupero el valor (la posicion inical de la estructura)
+        //regresamos el ambito anterior
+        res+= Cadena.get_local_0+enter;
+        res+= ambito+enter;
+        res+= Cadena.Diff+enter;
+        res+= Cadena.set_local_0+enter;
+        //por ultimo asignamos
+        res += Cadena.set_local_calc+enter;
+        return res;
+    }
+     
     //</editor-fold>
     
     //<editor-fold desc="acceso a arreglos locales">
@@ -403,6 +688,22 @@ public class Generador {
         return res;
     }
     
+    static String recuperar_dir_Arreglo_local(String no_dims,String pos_arr ,String pos_ambit){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        res+=pos_arr+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter; //con esto optengo la pos del heap dond inicia el arreglo
+        res+= no_dims+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.Add+enter; //esto suma la linealizacion que quedo en pila
+        return res;
+    }
+    
     static String recuperar_val_est_Arreglo_local(String no_dims,String pos_arr ,String pos_ambit, String pos_est){
         String res="";
         res+=Cadena.get_local_0+enter;
@@ -421,6 +722,26 @@ public class Generador {
         res+=pos_est+enter;
         res+=Cadena.Add+enter;
         res+=Cadena.get_global_calc+enter; //esto obtiene el valor y lo deja en pila
+        return res;
+    }
+    
+    static String recuperar_dir_est_Arreglo_local(String no_dims,String pos_arr ,String pos_ambit, String pos_est){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        res+=pos_arr+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter; //con esto optengo la pos del heap dond inicia el arreglo
+        res+= no_dims+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.Add+enter; //esto suma la linealizacion que quedo en pila
+        res+=Cadena.get_global_calc+enter; //esto obtiene el valor y lo deja en pila
+        //luego de obtener el valor, procedo a obtener el atributo del struct
+        res+=pos_est+enter;
+        res+=Cadena.Add+enter;
         return res;
     }
     
@@ -603,6 +924,27 @@ public class Generador {
         res+=Cadena.Add+enter;
         res+=Cadena.Add+enter; //esto suma la linealizacion que quedo en pila
         res+=Cadena.get_global_calc+enter; //esto obtiene el valor y lo deja en pila
+        return res;
+    }
+    
+    static String recuperar_dir_Arreglo_est_local(String no_dims,String pos_est,String pos_arr ,String pos_ambit){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_est+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //--------------------
+        res+=pos_arr+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_global_calc+enter; //con esto optengo la pos del heap dond inicia el arreglo
+        res+= no_dims+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.Add+enter; //esto suma la linealizacion que quedo en pila
         return res;
     }
     
@@ -812,7 +1154,22 @@ public class Generador {
         res+=Cadena.Add+enter;
         res+=Cadena.get_global_calc+enter; //con esto optengo la pos del heap donde esta la var  
         return res;
-    }     
+    }
+    
+    static String recuperar_dir_est_local(String pos_est,String pos_var ,String pos_ambit){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_est+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //--------------------
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;  
+        return res;
+    }
     
     //</editor-fold>
     
@@ -856,7 +1213,18 @@ public class Generador {
         res+=Cadena.Add+enter;
         res+=Cadena.get_local_calc+enter;
         return res;
-    }     
+    }
+    
+    static String recuperar_dir_var_local(String pos_var ,String pos_ambit){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        return res;
+    }    
     //</editor-fold>
     
     //<editor-fold desc="Acceso a varaible global">

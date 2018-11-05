@@ -153,12 +153,29 @@ public class Cadena {
     codigo_da_est       =   "//-----------------Codigo: Declaracion y Asignacion Estrcutura---------\n",
     codigo_d_est        =   "//-----------------Codigo: Declaracion de Estrcutura-------------------\n",
             
-    codigo_a_var_est_glo        =   "//-----------------Codigo: Asignacion variable de EST-------------------\n",        
-    codigo_a_var_glo            =   "//-----------------Codigo: Asignacion de varibale Glo-------------------\n",        
-    codigo_a_arr_glo            =   "//-----------------Codigo: Asignacion de Arreglo Glo -------------------\n",
-    codigo_a_arr_arr_glo        =   "//-----------------Codigo: Asignacion de Arr de Arr --------------------\n",
-    codigo_a_var_arr_glo        =   "//-----------------Codigo: Asignacion de var de Arr --------------------\n",
-    codigo_a_arr_est_glo        =   "//-----------------Codigo: Asignacion de Arreglo EST -------------------\n",
+                   
+    codigo_da_pri_loc       =   "//-----------------Codigo: Declaracion y Asignacion Primitiva local ----------\n",
+    codigo_d_pri_loc        =   "//-----------------Codigo: Declaracion de Primitiva local --------------------\n",
+    codigo_da_arr_est_loc   =   "//-----------------Codigo: Declaracion y Asignacion Arreglo Est local --------\n",
+    codigo_d_arr_est_loc    =   "//-----------------Codigo: Declaracion de Arreglo Estrcutura local -----------\n",
+    codigo_da_arr_pri_loc   =   "//-----------------Codigo: Declaracion y Asignacion Arreglo Pri local --------\n",
+    codigo_d_arr_pri_loc    =   "//-----------------Codigo: Declaracion de Arreglo Primitiva local ------------\n",
+    codigo_da_est_loc       =   "//-----------------Codigo: Declaracion y Asignacion Estrcutura local ---------\n",
+    codigo_d_est_loc        =   "//-----------------Codigo: Declaracion de Estrcutura local -------------------\n",        
+            
+    codigo_a_var_est_glo        =   "//-----------------Codigo: Asignacion variable de EST Global-------------------\n",        
+    codigo_a_var_glo            =   "//-----------------Codigo: Asignacion de varibale Global ----------------------\n",        
+    codigo_a_arr_glo            =   "//-----------------Codigo: Asignacion de Arreglo Global -----------------------\n",
+    codigo_a_arr_arr_glo        =   "//-----------------Codigo: Asignacion de Arr de Arr Global --------------------\n",
+    codigo_a_var_arr_glo        =   "//-----------------Codigo: Asignacion de var de Arr Global --------------------\n",
+    codigo_a_arr_est_glo        =   "//-----------------Codigo: Asignacion de Arreglo EST Global -------------------\n",
+    
+    codigo_a_var_est_loc        =   "//-----------------Codigo: Asignacion variable de EST Local -------------------\n",        
+    codigo_a_var_loc            =   "//-----------------Codigo: Asignacion de varibale Local  ----------------------\n",        
+    codigo_a_arr_loc            =   "//-----------------Codigo: Asignacion de Arreglo Local  -----------------------\n",
+    codigo_a_arr_arr_loc        =   "//-----------------Codigo: Asignacion de Arr de Arr Local  --------------------\n",
+    codigo_a_var_arr_loc        =   "//-----------------Codigo: Asignacion de var de Arr Local  --------------------\n",
+    codigo_a_arr_est_loc        =   "//-----------------Codigo: Asignacion de Arreglo EST Local  -------------------\n",
     //////////////// Reservadas DASM
             
             get_local   = "get_local ",

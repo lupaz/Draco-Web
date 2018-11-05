@@ -40,6 +40,7 @@ public class Traductor extends Thread{
     public TablaFunciones Funciones; // TB funciones actual
     public TablaEstructuras Estructuras;
     TablaSimbolos cima; // TS que esta en la cima
+    TablaSimbolos iniFun;
     ArrayList<Integer> lineasDeb;
     boolean debug;
     boolean detener;
@@ -1804,72 +1805,13 @@ public class Traductor extends Thread{
     }
     
     public void traducir(Nodo nodo){ 
-        switch (nodo.Term.getNombre()){        
-//===================================Asignacion de una Estructura ==============================                
-            case Cadena.AS_VAR_EST:
-                // <editor-fold defaultstate="collapsed">
-                
-                // </editor-fold>
-                break;
-//===================================Asignacion de una Estructura ==============================                
-            case Cadena.AS_ARR_EST:
-                // <editor-fold defaultstate="collapsed">
-                
-                // </editor-fold>
-                break;                
-//===================================Asignacion de un Arreglo ==================================                
-            case Cadena.AS_ARR:
-                // <editor-fold defaultstate="collapsed">
-                
-                // </editor-fold>
-                break;
-//===================================Continuar =================================================
-            case Cadena.CONTINUAR:
-                // <editor-fold defaultstate="collapsed">
-                
-                // </editor-fold>
-                break;                
-//===================================Declaracioon y Asignacion de Arreglo ======================                
-            case Cadena.DA_ARR:
-                // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//===================================Declaracioon de una estructura =============================
-            case Cadena.DEC_EST:
-                // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//===================================Definicion de una funcion ==================================            
-            case Cadena.DEC_FUN:
-                // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//===================================Definicion de un metodo ====================================                 
-            case Cadena.DEC_MET:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;                
-//=================================== Sentencia Detener ====================================                 
-            case Cadena.DETENER:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Sentencia imprimir ====================================                 
-            case Cadena.IMPRIMIR:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;                
+        switch (nodo.Term.getNombre()){                            
 //=================================== Inicio de la ejecucion ====================================                 
             case Cadena.INICIO:
                 // <editor-fold defaultstate="collapsed">
                 //comprobamos el import
                 if(nodo.Hijos.get(0).Hijos.size()>0){
+                    //<editor-fold>
                     for (Nodo hijo : nodo.Hijos.get(0).Hijos) {
                         String ruta=InterfazD.rutaGenesis+hijo.Token.getValor().toString();
                         File fichero = new File(ruta);
@@ -1906,80 +1848,186 @@ public class Traductor extends Thread{
                             System.out.println(error);
                         }
                     }
+                    //</editor-fold>
                 }
                 //capturamos el tamaño del ambito global
                 cima.tamanio=0; //en teoria no ocupa nada de espacio en el heap lo global//calcularTamano(nodo.Hijos.get(1));
                 //Capturamos y traducimos las estrcuturas y las funciones
                 capturarEstrcuts(nodo.Hijos.get(1));
                 //ahora capturamos las variables globales
-                capturarGlobales(nodo.Hijos.get(1));
-                // </editor-fold>
-                break;
-//=================================== funcion nativa linea ====================================                 
-            case Cadena.LINEA:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Llamada a metodos o funciones ====================================                 
-            case Cadena.LLAMADA:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;                
-//=================================== Sentencia Mietras ====================================                 
-            case Cadena.MIENTRAS:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Sentencia incremento/decremento===================================                 
-            case Cadena.OP:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Funcion nativa Ovalo ====================================                 
-            case Cadena.OVALO:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Sentencia PARA ====================================                 
-            case Cadena.PARA:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;      
-//=================================== Metodo principal ====================================                 
-            case Cadena.PRINCIPAL:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Funcion nativa PUNTO ====================================                 
-            case Cadena.PUNTO:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;
-//=================================== Sentencia retornar ====================================                 
-            case Cadena.RETORNAR:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;            
-//=================================== Sentencia  ================================================                 
-            case Cadena.SELECT:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
-                break;                
-//=================================== Sentencia SI ====================================                 
-            case Cadena.SI:
-                 // <editor-fold defaultstate="collapsed">
-
-                // </editor-fold>
+                capturarGlobales(nodo.Hijos.get(1));                
+                //ahora vamos a capturar las funciones
+                for (Nodo Hijo : nodo.Hijos.get(1).Hijos){
+                    if(Hijo!=null){
+                        switch (Hijo.Term.getNombre()) {
+                            case Cadena.DEC_FUN: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getValor().toString();
+                                String nombre = Hijo.Hijos.get(1).Token.getValor().toString();
+                                String linea = Hijo.Hijos.get(1).Token.getLinea();
+                                String columna = Hijo.Hijos.get(1).Token.getColumna();
+                                String parametros = "";
+                                String key = "";
+                                //ahora vamos a capturar los parametros si es que tiene 
+                                String tipoPar;
+                                for (Nodo subHijo : Hijo.Hijos.get(2).Hijos) {
+                                    tipoPar = subHijo.Hijos.get(0).Token.getValor().toString();
+                                    parametros += tipoPar;
+                                }
+                                key = nombre + "_" + parametros;
+                                if (!Funciones.existeFuncion(key)) {
+                                    if (Hijo.Hijos.get(2).Hijos.size() > 0) {
+                                        //<editor-fold>
+                                        boolean err = false;
+                                        ArrayList<String> pars = new ArrayList<>();
+                                        for (Nodo subHijo : Hijo.Hijos.get(2).Hijos) {
+                                            if (!pars.contains(subHijo.Hijos.get(1).Token.getValor().toString())) {
+                                                pars.add(subHijo.Hijos.get(1).Token.getValor().toString());
+                                            } else {//error nombre de parametro repetido
+                                                String error = "ERROR SEMANTICO: No se agrego funcion -> " + nombre + " por parametro repetido:  L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                                err = true;
+                                                break;
+                                            }
+                                        }
+                                        //si no existen parametros repetidos
+                                        if (!err) {
+                                            Funcion fun = new Funcion(tipo, key, Hijo.Hijos.get(3));
+                                            fun.key = key;
+                                            //con esto agregamos los parametros de la funcion
+                                            for (Nodo subHijo : Hijo.Hijos.get(2).Hijos) {
+                                                fun.addParametro(subHijo.Hijos.get(1).Token.getValor().toString(), subHijo.Hijos.get(0).Token.getValor().toString());
+                                            }
+                                        }
+                                        //</editor-fold>
+                                    } else { //funcion sin parametros
+                                        key = nombre + "_" + parametros;
+                                        Funcion fun = new Funcion(tipo, key, Hijo.Hijos.get(3));
+                                        fun.key = key;
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La funcion ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                                break;
+                            }
+                            case Cadena.DEC_MET: {
+                                //<editor-fold>
+                                String tipo = "vacio";
+                                String nombre = Hijo.Hijos.get(0).Token.getValor().toString();
+                                String linea = Hijo.Hijos.get(0).Token.getLinea();
+                                String columna = Hijo.Hijos.get(0).Token.getColumna();
+                                String parametros = "";
+                                String key = "";
+                                //ahora vamos a capturar los parametros si es que tiene 
+                                String tipoPar;
+                                for (Nodo subHijo : Hijo.Hijos.get(1).Hijos) {
+                                    tipoPar = subHijo.Hijos.get(0).Token.getValor().toString();
+                                    parametros += tipoPar;
+                                }
+                                key = nombre + "_" + parametros;
+                                if (!Funciones.existeFuncion(key)) {
+                                    if (Hijo.Hijos.get(1).Hijos.size() > 0) {
+                                        //<editor-fold>
+                                        boolean err = false;
+                                        ArrayList<String> pars = new ArrayList<>();
+                                        for (Nodo subHijo : Hijo.Hijos.get(1).Hijos) {
+                                            if (!pars.contains(subHijo.Hijos.get(1).Token.getValor().toString())) {
+                                                pars.add(subHijo.Hijos.get(1).Token.getValor().toString());
+                                            } else {//error nombre de parametro repetido
+                                                String error = "ERROR SEMANTICO: No se agrego funcion -> " + nombre + " por parametro repetido:  L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                                err = true;
+                                                break;
+                                            }
+                                        }
+                                        //si no existen parametros repetidos
+                                        if (!err) {
+                                            Funcion fun = new Funcion(tipo, key, Hijo.Hijos.get(2));
+                                            fun.key = key;
+                                            //con esto agregamos los parametros de la funcion
+                                            for (Nodo subHijo : Hijo.Hijos.get(1).Hijos) {
+                                                fun.addParametro(subHijo.Hijos.get(1).Token.getValor().toString(), subHijo.Hijos.get(0).Token.getValor().toString());
+                                            }
+                                            Funciones.insertar(fun.Nombre,fun);
+                                        }
+                                        //</editor-fold>
+                                    } else { //funcion sin parametros
+                                        key = nombre + "_" + parametros;
+                                        Funcion fun = new Funcion(tipo, key, Hijo.Hijos.get(2));
+                                        fun.key = key;
+                                        Funciones.insertar(fun.Nombre,fun);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El metodo ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                                break;
+                            }
+                            case Cadena.PRINCIPAL: {
+                                //<editor-fold>
+                                String tipo = "vacio";
+                                String nombre = Hijo.Hijos.get(0).Token.getValor().toString();
+                                String linea = Hijo.Hijos.get(0).Token.getLinea();
+                                String columna = Hijo.Hijos.get(0).Token.getColumna();
+                                if (!Funciones.existeFuncion(nombre)) {
+                                    Funcion fun = new Funcion(nombre, tipo, Hijo.Hijos.get(1));
+                                    fun.key=nombre;
+                                    Funciones.insertar(fun.Nombre,fun);
+                                } else {
+                                    String error = "ERROR SEMANTICO: El metodo principal ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            }
+                        }
+                    }                    
+                }
+                //despues de capturar las funciones las vamos a traducir
+                String codigo_dasm="";
+                for (Object value : Funciones.t.values()) {
+                    //<editor-fold>
+                    Funcion fun = (Funcion) value;
+                    //creamos la tabla de simbolos del metodo o funcion
+                    String ambito = cima.Nivel + Cadena.fun + fun.Nombre;
+                    TablaSimbolos tab = new TablaSimbolos(ambito, Cadena.ambito_fun, true, false, false);
+                    tab.etq_fin=Generador.generar_etq();
+                    pilaSimbols.push(tab); //agregamos la nueva tabla de simbolos a la pila
+                    cima = tab; // la colocamos en la cima
+                    iniFun =tab;
+                    //ahora vamos a calcular su tamaño,
+                    int pos=0;
+                    int tamano = fun.numPars()+calcularTamano(fun.Cuerpo)+1; // el uno es del retorno siempre se le apartara su pos de memoaria
+                    //asignamos su tamaño
+                    cima.tamanio=tamano;
+                    //insertamos retorno en la pos 0;
+                    Simbolo sim = new Simbolo("retorno",retornarTam("retorno"),"var retorno","retorno", pos+"", "0","0");
+                    cima.insertar("retorno", sim);
+                    pos++;
+                    //ahora insertamos los parametros de la funcion
+                    for (Parametro Param : fun.Parametros) {
+                        sim=new Simbolo(Param.getNombre(),retornarTam(Param.getTipo()),Cadena.parametro,Param.getTipo(),pos+"","0","0");
+                        cima.insertar(Param.getNombre(), sim);
+                        pos++;
+                    }
+                    codigo_dasm+=Cadena.Function+"$"+fun.Nombre+"\n";
+                    codigo_dasm+=capturarFunciones(fun.Cuerpo,fun.numPars()+1);//le sumo el el retorno por que siempre va
+                    codigo_dasm+=cima.etq_fin+" :\n";
+                    codigo_dasm+=Cadena.End+"\n";
+                    codigo_generado+=codigo_dasm;
+                    //sacamos la tabla de simbolos
+                    pilaSimbols.pop();
+                    cima=pilaSimbols.peek();
+                    //</editor-fold>
+                }
+                // </editor-fold>                                                
                 break;                               
         }
     }
@@ -2090,7 +2138,7 @@ public class Traductor extends Thread{
                                                     //<editor-fold desc="generacion DASM">
                                                     Codigo_dasm += Generador.inicia_var_estr(pos + "", Cadena.arreglo);
                                                     Codigo_dasm += Generador.almacenr_punt_arreglo_estr();
-                                                    Codigo_dasm += Generador.setear_dim_arreglo_est(no_dim);
+                                                    Codigo_dasm += Generador.setear_dim_arreglo_est(no_dim+"\n");
                                                     //Almacenamos los valores de las dimensiones 
                                                     for (retorno val_dim : val_dims) {
                                                         Codigo_dasm += Generador.setear_dim_arreglo_est(val_dim.cod_generado);
@@ -2598,8 +2646,8 @@ public class Traductor extends Thread{
                                         for (int i = 1; i < val_dims.size() + 1; i++) {
                                             Codigo_dasm += Generador.recuperar_dims_dec_arr(pos + "", i + "");
                                         }
-                                        Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);
-                                        Codigo_dasm += Generador.iniciar_vals_arreglo_est(tipo);
+                                        Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);                                        
+                                        Codigo_dasm += Generador.iniciar_vals_dec_arr_var(pos+"",tipo);
                                         //</editor-fold>
                                         pos++;
                                     } else {
@@ -2941,85 +2989,91 @@ public class Traductor extends Thread{
                         linea = hijo.Hijos.get(0).Token.getLinea();
                         String columna = hijo.Hijos.get(0).Token.getColumna();
                         Simbolo sim = existeVariable3(nombre);
-                        if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
-                            Estructura est = Estructuras.retornaEstructura(sim.tipo);
-                            if (est != null) {
-                                String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
-                                columna = hijo.Hijos.get(1).Token.getColumna();
-                                Simbolo sim2 = est.getAtributo(nombre2);
-                                if (sim2 != null) {
-                                    if (sim2.TipoObjeto.equals(Cadena.arreglo)) {
-                                        ArrayList<retorno> val_dims = new ArrayList<>();
-                                        capturarEXP(val_dims, hijo.Hijos.get(2));
-                                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
-                                            if (sim2.numDims == val_dims.size()) { // comprobamos el numero de dimensiones                                                
-                                                retorno ret  = comprobarExp(hijo.Hijos.get(3));                                                
-                                                if(ret.tipo.equals(sim2.tipo)){
-                                                    String et_error = Generador.generar_etq();
-                                                    String et_correcto = Generador.generar_etq();
-                                                    Codigo_dasm+=Cadena.codigo_a_arr_est_glo;
-                                                    //codigo para comprobar los indices en ejecucion
-                                                    for (int i = 0; i < val_dims.size(); i++) {
-                                                        Codigo_dasm += Generador.comprobarIndice_est_global((i + 1) + "", sim.posicion, sim2.posicion, val_dims.get(i).cod_generado, et_error);
-                                                    }
-                                                    // codigo para linealizar    
-                                                    for (int i = 0; i < val_dims.size(); i++) {
-                                                        if (i == 0) {
-                                                            Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
-                                                        } else {
-                                                            Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion);
+                        if (sim != null) {
+                            if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                                Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                if (est != null) {
+                                    String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(1).Token.getColumna();
+                                    Simbolo sim2 = est.getAtributo(nombre2);
+                                    if (sim2 != null) {
+                                        if (sim2.TipoObjeto.equals(Cadena.arreglo)) {
+                                            ArrayList<retorno> val_dims = new ArrayList<>();
+                                            capturarEXP(val_dims, hijo.Hijos.get(2));
+                                            if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                if (sim2.numDims == val_dims.size()) { // comprobamos el numero de dimensiones                                                
+                                                    retorno ret = comprobarExp(hijo.Hijos.get(3));
+                                                    if (ret.tipo.equals(sim2.tipo)) {
+                                                        String et_error = Generador.generar_etq();
+                                                        String et_correcto = Generador.generar_etq();
+                                                        Codigo_dasm += Cadena.codigo_a_arr_est_glo;
+                                                        //codigo para comprobar los indices en ejecucion
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            Codigo_dasm += Generador.comprobarIndice_est_global((i + 1) + "", sim.posicion, sim2.posicion, val_dims.get(i).cod_generado, et_error);
                                                         }
+                                                        // codigo para linealizar    
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            if (i == 0) {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                            } else {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion);
+                                                            }
+                                                        }
+                                                        //fin del arreglo
+                                                        Codigo_dasm += Generador.recuperar_dir_Arreglo_est_global(sim2.numDims + "", sim.posicion, sim2.posicion);
+                                                        Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                        //ahora lo del error 
+                                                        Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                        Codigo_dasm += et_error + ":\n";
+                                                        String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                        String cad2 = generarCodCad(sim2.nombre + "\n");
+                                                        //llamo a concat
+                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                        Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                        //llamo al funcion print
+                                                        Codigo_dasm += "//----------------------------------------------------\n";
+                                                        Codigo_dasm += et_correcto + ":\n";
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
                                                     }
-                                                    //fin del arreglo
-                                                    Codigo_dasm += Generador.recuperar_dir_Arreglo_est_global(sim2.numDims + "", sim.posicion, sim2.posicion);
-                                                    Codigo_dasm+= Generador.asignar_var_glob_loc_heap(ret.cod_generado);
-                                                    //ahora lo del error 
-                                                    Codigo_dasm += Cadena.br + et_correcto + "\n";
-                                                    Codigo_dasm += et_error + ":\n";
-                                                    String cad1 =Dasm.Cadena.ini_idex_bound+"\n";
-                                                    String cad2=generarCodCad(sim2.nombre+"\n");
-                                                    //llamo a concat
-                                                    String expr= Generador.llamada_concat(cima.tamanio+"", cad1, cad2);
-                                                    Codigo_dasm += "//------------------llamada a print ----------------\n";
-                                                    Codigo_dasm+= Generador.llamada_print(cima.tamanio+"", expr,"-2");
-                                                    //llamo al funcion print
-                                                    Codigo_dasm+="//----------------------------------------------------\n";
-                                                    Codigo_dasm += et_correcto + ":\n";
-                                                }else{
-                                                    String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
-                                                }                                                
+                                                }
                                             } else {
-                                                String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
                                                 InterfazD.listaErrores.add(error);
                                                 System.out.println(error);
                                             }
                                         } else {
-                                            String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
                                             System.out.println(error);
                                         }
                                     } else {
-                                        String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                         InterfazD.listaErrores.add(error);
                                         System.out.println(error);
                                     }
                                 } else {
-                                    String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                     InterfazD.listaErrores.add(error);
                                     System.out.println(error);
                                 }
                             } else {
-                                String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                 InterfazD.listaErrores.add(error);
                                 System.out.println(error);
                             }
-                        } else {
-                            String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                        }else{
+                            String error = "ERROR SEMANTICO: La variable no se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                             InterfazD.listaErrores.add(error);
                             System.out.println(error);
-                        }
+                        }                        
                         //</editor-fold>
                         break;
                     }
@@ -3065,7 +3119,7 @@ public class Traductor extends Thread{
                             }
                             //</editor-fold>
                         } else {
-                            String error = "ERROR SEMANTICO: La variable a acceder no encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                            String error = "ERROR SEMANTICO: La variable a acceder no se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                             InterfazD.listaErrores.add(error);
                             System.out.println(error);
                         }
@@ -3093,6 +3147,1448 @@ public class Traductor extends Thread{
                 codigo_generado += Codigo_dasm;
             }            
         }
+    }
+    
+    private String capturarFunciones(Nodo nodo,int pos_ini){
+        int pos=pos_ini;
+        String Codigo_dasm = "";
+        String linea = "0";
+        for (Nodo hijo : nodo.Hijos) {
+            if(hijo!=null){                                                
+                switch (hijo.Term.getNombre()) {
+//===================================Declaracioon y Asignacion de Arreglo ======================                
+                    case Cadena.DA_VAR:{
+                        // <editor-fold defaultstate="collapsed">
+                        String tipo = hijo.Hijos.get(0).Token.getValor().toString();
+                        linea = hijo.Hijos.get(0).Token.getLinea();
+                        String columna = hijo.Hijos.get(0).Token.getColumna();
+                        if (hijo.Hijos.get(1).Hijos.size() > 1) { // es una lista de variables
+                            //<editor-fold>
+                            if (hijo.Hijos.get(2).Hijos.size() > 0) { //declaracion con asignacion,  
+                                if (hijo.Hijos.get(0).Token.getNombre().equals(Cadena.id)) { //lista de estructuras, solo se asigna la ultima
+                                    //<editor-fold>
+                                    if (Estructuras.existeEstructura(tipo)) { //validamos que este definido el tipo de struct
+                                        int num_hijos = hijo.Hijos.get(1).Hijos.size();
+                                        for (int i = 0; i < num_hijos - 1; i++) {
+                                            String nombre = hijo.Hijos.get(1).Hijos.get(i).Token.getValor().toString();
+                                            columna = hijo.Hijos.get(1).Hijos.get(i).Token.getColumna();
+                                            Simbolo sim =existeVariable2(nombre);
+                                            if (sim==null) {
+                                                sim = new Simbolo(nombre, retornarTam(tipo), Cadena.estructura, tipo, pos + "", linea, columna);
+                                                sim.TipoObjeto=Cadena.estructura;
+                                                cima.insertar(nombre, sim);
+                                                Codigo_dasm += Cadena.codigo_d_est_loc;
+                                                Codigo_dasm += Generador.declara_struct_local(pos + "", tipo,cima.tamanio+"");
+                                                pos++;
+                                            } else {
+                                                String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        }
+                                        //asignamos la ultima
+                                        String nombre = hijo.Hijos.get(1).Hijos.get(num_hijos - 1).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(1).Hijos.get(num_hijos - 1).Token.getColumna();
+                                        Simbolo sim = existeVariable2(nombre);
+                                        if (sim==null) {
+                                            retorno ret = comprobarExp(hijo.Hijos.get(2).Hijos.get(0));
+                                            if (ret.tipo.equals(tipo)) {
+                                                sim = new Simbolo(nombre, retornarTam(tipo), Cadena.estructura, tipo, pos + "", linea, columna);
+                                                sim.TipoObjeto=Cadena.estructura;
+                                                cima.insertar(nombre, sim);
+                                                //aca va el codigo generado
+                                                //<editor-fold desc="codigo dasm generado">
+                                                Codigo_dasm += Cadena.codigo_da_est_loc;
+                                                Codigo_dasm += Generador.declara_asigna_var_local(pos + "", ret.cod_generado);
+                                                pos++;
+                                                //</editor-fold>
+                                            } else {
+                                                String error = "ERROR SEMANTICO: La estrcutura a asignar no es de del mismo  tipo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El tipo de estructura a instanciar no esta definida -> " + tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                    //</editor-fold>
+                                } else {//es una lista de primitivas, solo se asigna la ultima
+                                    //<editor-fold>
+                                    int num_hijos = hijo.Hijos.get(1).Hijos.size();
+                                    for (int i = 0; i < num_hijos - 1; i++) {
+                                        String nombre = hijo.Hijos.get(1).Hijos.get(i).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(1).Hijos.get(i).Token.getColumna();
+                                        Simbolo sim = existeVariable2(nombre);
+                                        if (sim==null) {
+                                            sim = new Simbolo(nombre, retornarTam(tipo), Cadena.var_primitiva, tipo, pos + "", linea, columna);
+                                            cima.insertar(sim.nombre, sim);
+                                            Codigo_dasm += Cadena.codigo_d_pri_loc;
+                                            Codigo_dasm += Generador.declara_var_local(pos + "", tipo);
+                                            pos++;
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    }
+                                    //asignamos la ultima
+                                    String nombre = hijo.Hijos.get(1).Hijos.get(num_hijos - 1).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(1).Hijos.get(num_hijos - 1).Token.getColumna();
+                                    Simbolo sim = existeVariable2(nombre);
+                                    if (sim!=null){
+                                        retorno ret = comprobarExp(hijo.Hijos.get(2).Hijos.get(0));
+                                        if (ret.tipo.equals(tipo)) {
+                                            sim = new Simbolo(nombre, retornarTam(tipo), Cadena.var_primitiva, tipo, pos + "", linea, columna);
+                                            cima.insertar(nombre, sim);
+                                            //aca va el codigo generado
+                                            //<editor-fold desc="codigo dasm generado"> 
+                                            Codigo_dasm += Cadena.codigo_da_pri;
+                                            Codigo_dasm += Generador.declara_asigna_var_local(pos + "", ret.cod_generado);
+                                            pos++;
+                                            //</editor-fold>
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La estrcutura a asignar no es de del mismo  tipo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                    //</editor-fold>
+                                }
+                            } else { //solo de claraccion
+                                if (hijo.Hijos.get(0).Token.getNombre().equals(Cadena.id)) { //lista de estructuras, no se asigna niguna
+                                    //<editor-fold>
+                                    if (Estructuras.existeEstructura(tipo)) { //validamos que este definido el tipo de struct
+                                        int num_hijos = hijo.Hijos.get(1).Hijos.size();
+                                        for (int i = 0; i < num_hijos; i++) {
+                                            String nombre = hijo.Hijos.get(1).Hijos.get(i).Token.getValor().toString();
+                                            columna = hijo.Hijos.get(1).Hijos.get(i).Token.getColumna();
+                                            Simbolo sim = existeVariable2(nombre);                                            
+                                            if (sim==null) {
+                                                sim = new Simbolo(nombre, retornarTam(tipo), Cadena.estructura, tipo, pos + "", linea, columna);
+                                                cima.insertar(nombre, sim);
+                                                sim.TipoObjeto=Cadena.estructura;
+                                                Codigo_dasm += Cadena.codigo_d_est_loc;     
+                                                Codigo_dasm += Generador.declara_struct_local(pos + "", tipo,cima.tamanio+"");
+                                                pos++;
+                                            } else {
+                                                String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El tipo de estructura a instanciar no esta definida -> " + tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                    //</editor-fold>
+                                } else { //es una lista de primitivas, no se asigna niguna
+                                    //<editor-fold>
+                                    int num_hijos = hijo.Hijos.get(1).Hijos.size();
+                                    for (int i = 0; i < num_hijos; i++) {
+                                        String nombre = hijo.Hijos.get(1).Hijos.get(i).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(1).Hijos.get(i).Token.getColumna();
+                                        if (!Global.existeSimbolo(nombre)) {
+                                            Simbolo sim = new Simbolo(nombre, retornarTam(tipo), Cadena.var_primitiva, tipo, pos + "", linea, columna);
+                                            cima.insertar(sim.nombre, sim);
+                                            Codigo_dasm += Cadena.codigo_d_pri_loc;
+                                            Codigo_dasm += Generador.declara_var_local(pos + "", tipo);
+                                            pos++;
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    }
+                                    //</editor-fold>
+                                }
+                            }
+                            //</editor-fold>
+                        } else { // es una sola variable
+                            //<editor-fold>
+                            String nombre = hijo.Hijos.get(1).Hijos.get(0).Token.getValor().toString();
+                            Simbolo sim = existeVariable2(nombre);
+                            if (sim == null) {
+                                if (hijo.Hijos.get(2).Hijos.size() > 0) { // es una declaracion con asignacion                                
+                                    if (hijo.Hijos.get(0).Token.getNombre().equals(Cadena.id)) {//es una estructura                                    
+                                        //<editor-fold>
+                                        if (Estructuras.existeEstructura(tipo)) {
+                                            retorno ret = comprobarExp(hijo.Hijos.get(2).Hijos.get(0));
+                                            if (ret.tipo.equals(tipo)) {
+                                                sim = new Simbolo(nombre, retornarTam(tipo), Cadena.estructura, tipo, pos + "", linea, columna);
+                                                sim.TipoObjeto=Cadena.estructura;
+                                                cima.insertar(nombre, sim);
+                                                //aca va el codigo generado
+                                                //<editor-fold desc="codigo dasm generado">
+                                                Codigo_dasm += Cadena.codigo_da_est_loc;
+                                                Codigo_dasm += Generador.declara_asigna_var_local(pos + "",ret.cod_generado);
+                                                //</editor-fold>
+                                                pos++;
+                                            } else {
+                                                String error = "ERROR SEMANTICO: La estrcutura a asignar no es de del mismo  tipo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El tipo de estructura a instanciar no esta definida -> " + tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                        //</editor-fold>
+                                    } else { //es una variable primitiva
+                                        //<editor-fold>
+                                        retorno ret = comprobarExp(hijo.Hijos.get(2).Hijos.get(0));
+                                        if (ret.tipo.equals(tipo)) {
+                                            sim = new Simbolo(nombre, retornarTam(tipo), Cadena.var_primitiva, tipo, pos + "", linea, columna);
+                                            cima.insertar(nombre, sim);
+                                            //<editor-fold desc="codigo dasm generado">
+                                            Codigo_dasm += Cadena.codigo_da_pri_loc;
+                                            Codigo_dasm += Generador.declara_asigna_var_local(pos + "", ret.cod_generado);
+                                            //</editor-fold>
+                                            pos++;
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Incompatibilidad de tipos en la asignacion de la variable  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                        //</editor-fold>
+                                    }
+                                } else { //es solo una declaracion                                            
+                                    if (hijo.Hijos.get(0).Token.getNombre().equals(Cadena.id)) {//es una estrcutura
+                                        //<editor-fold>
+                                        if (Estructuras.existeEstructura(tipo)) {
+                                            sim = new Simbolo(nombre, retornarTam(tipo), Cadena.estructura, tipo, pos + "", linea, columna);
+                                            sim.TipoObjeto=Cadena.estructura;
+                                            cima.insertar(nombre, sim);                                            
+                                            Codigo_dasm += Cadena.codigo_d_est_loc;
+                                            Codigo_dasm += Generador.declara_struct_local(pos + "", tipo,cima.tamanio+"");
+                                            pos++;
+                                            //inicialicar la var
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La estructura a instanciar no esta definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                        //</editor-fold>
+                                    } else { //es una variable primitiva                                                 
+                                        //<editor-fold>
+                                        sim = new Simbolo(nombre, retornarTam(tipo), Cadena.var_primitiva, tipo, pos + "", linea, columna);
+                                        cima.insertar(nombre, sim);
+                                        Codigo_dasm += Cadena.codigo_d_pri_loc;
+                                        Codigo_dasm += Generador.declara_var_local(pos + "", tipo);
+                                        pos++;
+                                        //</editor-fold>
+                                    }
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable ya se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        }
+                        // </editor-fold>
+                        break;
+                    }
+//===================================Declaracioon y Asignacion de Variable ======================                    
+                    case Cadena.DA_ARR:{
+                        // <editor-fold defaultstate="collapsed">
+                        String tipo = hijo.Hijos.get(0).Token.getNombre();
+                        linea = hijo.Hijos.get(0).Token.getLinea();
+                        String columna = hijo.Hijos.get(0).Token.getColumna();
+                        String name = hijo.Hijos.get(1).Token.getValor().toString();
+                        //validamos que no este definido
+                        Simbolo sim=existeVariable2(name);
+                        if (sim==null) {
+                            if (tipo.equals(Cadena.id)) { //es un arreglo de estructuras
+                                tipo = hijo.Hijos.get(0).Token.getValor().toString();
+                                columna = hijo.Hijos.get(1).Token.getColumna();
+                                if (Estructuras.existeEstructura(tipo)) {
+                                    if (hijo.Hijos.get(3).Hijos.size() > 0){ //es declaracion con asignacion
+                                        //<editor-fold>
+                                        sim = new Simbolo(name, retornarTam(tipo), Cadena.arreglo, tipo, pos + "", linea, columna);
+                                        sim.TipoObjeto = Cadena.arreglo;
+                                        sim.numDims = hijo.Hijos.get(2).Hijos.size();
+                                        String no_dim = sim.numDims + "";
+                                        ArrayList<retorno> val_dims = new ArrayList<>();
+                                        ArrayList<retorno> valores = new ArrayList<>();
+                                        ArrayList<Integer> dimens = new ArrayList<>();
+                                        capturarEXP(val_dims, hijo.Hijos.get(2));
+                                        capturarEXP(valores, hijo.Hijos.get(3).Hijos.get(0));
+                                        capturarDims(dimens, hijo.Hijos.get(3).Hijos.get(0));
+                                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)){
+                                            if (validarTipos(valores)) { //validamos el mismo tipo de los valores
+                                                String tip = ((retorno) valores.get(0)).tipo;
+                                                if (tip.equals(tipo)) {
+                                                    if (sim.numDims == dimens.size()){                                                        
+                                                        //insertamos el simbolo
+                                                        cima.insertar(name, sim);
+                                                        //<editor-fold>
+                                                        Codigo_dasm += Cadena.codigo_da_arr_est_loc;
+                                                        Codigo_dasm += Generador.inicio_dec_arr_loc(pos + "");
+                                                        Codigo_dasm += Generador.setear_dim_dec_arr_loc(no_dim+"\n");
+                                                        //Almacenamos los valores de las dimensiones 
+                                                        for (retorno val_dim : val_dims) {
+                                                            Codigo_dasm += Generador.setear_dim_dec_arr_loc(val_dim.cod_generado);
+                                                        }
+                                                        //alamcenamos los valores de las dimensiones en el heap para multiplicarlas
+                                                        for (int i = 1; i < val_dims.size() + 1; i++) {
+                                                            Codigo_dasm += Generador.recuperar_dims_dec_arr_loc(pos + "", i + "");
+                                                        }
+                                                        Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);
+                                                        Codigo_dasm += Generador.recuperar_pos_ini_arr_loc(pos + "");
+                                                        for (retorno valore : valores) {
+                                                            Codigo_dasm += Generador.asignar_val_arr_loc(valore.cod_generado);
+                                                        }
+                                                        Codigo_dasm += Generador.finalizar_asignacion_arr_loc();
+                                                        //</editor-fold>
+                                                        pos++;
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: Dimnensiones incorrectas en la DEC y ASIG  del arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: Incopatibilidad de tipos en la DEC y ASIG  del arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Todos los valores a asignar deben ser del mismo tipo , arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                        //</editor-fold>
+                                    } else { //es solo la declaración de un arreglo de estructuras
+                                        //<editor-fold>                                    
+                                        sim = new Simbolo(name, retornarTam(tipo), Cadena.arreglo, tipo, pos + "", linea, columna);
+                                        sim.TipoObjeto = Cadena.arreglo;
+                                        sim.numDims = hijo.Hijos.get(2).Hijos.size();
+                                        String no_dim = sim.numDims + "";
+                                        ArrayList<retorno> val_dims = new ArrayList<>();
+                                        capturarEXP(val_dims, hijo.Hijos.get(2));
+                                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                            cima.insertar(sim.nombre, sim);
+                                            //<editor-fold desc="generacion DASM">
+                                            Codigo_dasm += Cadena.codigo_d_arr_est_loc;
+                                            Codigo_dasm += Generador.inicio_dec_arr_loc(pos + "");
+                                            Codigo_dasm += Generador.setear_dim_dec_arr_loc(no_dim+"\n");
+                                            //Almacenamos los valores de las dimensiones 
+                                            for (retorno val_dim : val_dims) {
+                                                Codigo_dasm += Generador.setear_dim_dec_arr_loc(val_dim.cod_generado);
+                                            }
+                                            //alamcenamos los valores de las dimensiones en el heap para multiplicarlas
+                                            for (int i = 1; i < val_dims.size() + 1; i++) {
+                                                Codigo_dasm += Generador.recuperar_dims_dec_arr_loc(pos + "", i + "");
+                                            }
+                                            Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);
+                                            Codigo_dasm += Generador.iniciar_vals_dec_arr_estr_loc(pos + "", tipo,cima.tamanio+"");
+                                            //</editor-fold>
+                                            pos++;
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                        //</editor-fold>
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El tipo de estrcutara del arreglo a declar no esta definido -> " + tipo + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else { //arreglo de primitivos
+                                tipo = hijo.Hijos.get(0).Token.getValor().toString();
+                                columna = hijo.Hijos.get(1).Token.getColumna();
+                                if (hijo.Hijos.get(3).Hijos.size() > 0) { //es declaracion con asignacion de arreglo de primitiovos
+                                    //<editor-fold>
+                                    sim = new Simbolo(name, retornarTam(tipo), Cadena.arreglo, tipo, pos + "", linea, columna);
+                                    sim.TipoObjeto = Cadena.arreglo;
+                                    sim.numDims = hijo.Hijos.get(2).Hijos.size();
+                                    String no_dim = sim.numDims + "";
+                                    ArrayList<retorno> val_dims = new ArrayList<>();
+                                    ArrayList<retorno> valores = new ArrayList<>();
+                                    ArrayList<Integer> dimens = new ArrayList<>();
+                                    capturarEXP(val_dims, hijo.Hijos.get(2));
+                                    capturarEXP(valores, hijo.Hijos.get(3).Hijos.get(0));
+                                    capturarDims(dimens, hijo.Hijos.get(3).Hijos.get(0));
+                                    if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                        if (validarTipos(valores)) { //validamos el mismo tipo de los valores
+                                            String tip = ((retorno) valores.get(0)).tipo;
+                                            if (tip.equals(tipo)){
+                                                if (sim.numDims == dimens.size()) {
+                                                    //insrtamos el simbolo
+                                                    cima.insertar(name, sim);
+                                                    //<editor-fold>
+                                                    Codigo_dasm += Cadena.codigo_da_arr_pri_loc;
+                                                    Codigo_dasm += Generador.inicio_dec_arr_loc(pos + "");
+                                                    Codigo_dasm += Generador.setear_dim_dec_arr_loc(no_dim+"\n");
+                                                    //Almacenamos los valores de las dimensiones 
+                                                    for (retorno val_dim : val_dims) {
+                                                        Codigo_dasm += Generador.setear_dim_dec_arr_loc(val_dim.cod_generado);
+                                                    }
+                                                    //alamcenamos los valores de las dimensiones en el heap para multiplicarlas
+                                                    for (int i = 1; i < val_dims.size() + 1; i++) {
+                                                        Codigo_dasm += Generador.recuperar_dims_dec_arr_loc(pos + "", i + "");
+                                                    }
+                                                    Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);
+                                                    Codigo_dasm += Generador.recuperar_pos_ini_arr_loc(pos + "");
+                                                    for (retorno valore : valores) {
+                                                        Codigo_dasm += Generador.asignar_val_arr_loc(valore.cod_generado);
+                                                    }
+                                                    Codigo_dasm += Generador.finalizar_asignacion_arr_loc();
+                                                    //</editor-fold>
+                                                    pos++;
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: Dimnensiones incorrectas en la DEC y ASIG  del arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Incopatibilidad de tipos en la DEC y ASIG  del arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Todos los valores a asignar deben ser del mismo tipo , arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                    //</editor-fold>
+                                } else { // es solo declaracion sin asignacion de primitivos
+                                    //<editor-fold>
+                                    sim = new Simbolo(name, retornarTam(tipo), Cadena.arreglo, tipo, pos + "", linea, columna);
+                                    sim.TipoObjeto = Cadena.arreglo;
+                                    sim.numDims = hijo.Hijos.get(2).Hijos.size();
+                                    String no_dim = sim.numDims + "";
+                                    ArrayList<retorno> val_dims = new ArrayList<>();
+                                    capturarEXP(val_dims, hijo.Hijos.get(2));
+                                    if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)){
+                                        cima.insertar(sim.nombre, sim);
+                                        //<editor-fold desc="generacion DASM">
+                                        Codigo_dasm += Cadena.codigo_d_arr_pri_loc;
+                                        Codigo_dasm += Generador.inicio_dec_arr_loc(pos + "");
+                                        Codigo_dasm += Generador.setear_dim_dec_arr_loc(no_dim+"\n");
+                                        //Almacenamos los valores de las dimensiones 
+                                        for (retorno val_dim : val_dims) {
+                                            Codigo_dasm += Generador.setear_dim_dec_arr_loc(val_dim.cod_generado);
+                                        }
+                                        //alamcenamos los valores de las dimensiones en el heap para multiplicarlas
+                                        for (int i = 1; i < val_dims.size() + 1; i++) {
+                                            Codigo_dasm += Generador.recuperar_dims_dec_arr_loc(pos + "", i + "");
+                                        }
+                                        Codigo_dasm += Generador.multiplicar_dims_areglo_est(val_dims.size() - 1);
+                                        Codigo_dasm += Generador.iniciar_vals_dec_arr_var_loc(pos+"",tipo);
+                                        //</editor-fold>
+                                        pos++;
+                                    } else {
+                                        String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                    //</editor-fold>
+                                }
+                            }
+                        } else {
+                            String error = "ERROR SEMANTICO: Ya se encuntra definio un arreglo, con el mismo nombre -> " + name + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                            InterfazD.listaErrores.add(error);
+                            System.out.println(error);
+                        }
+                        // </editor-fold>
+                        break;
+                    }                    
+//===================================Asignacion de una Estructura ==============================                
+                    case Cadena.AS_VAR_EST:{
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre = nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local 
+                            //<editor-fold>
+                            if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                                Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                if (est != null) {
+                                    String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(1).Token.getColumna();
+                                    Simbolo sim2 = est.getAtributo(nombre2);
+                                    if (sim2 != null) {
+                                        retorno ret = comprobarExp(hijo.Hijos.get(2));
+                                        if (ret.tipo.equals(sim2.tipo)) {
+                                            Codigo_dasm += Cadena.codigo_a_var_est_loc;
+                                            Codigo_dasm += Generador.recuperar_dir_est_local(sim.posicion, sim2.posicion,cima.tamanio+"");
+                                            Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Incompatibilidad de tipos en la asignacion del atributo de estructura -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else {
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global 
+                                //<editor-fold>
+                                if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                                    Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                    if (est != null) {
+                                        String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(1).Token.getColumna();
+                                        Simbolo sim2 = est.getAtributo(nombre2);
+                                        if (sim2 != null) {
+                                            retorno ret = comprobarExp(hijo.Hijos.get(2));
+                                            if (ret.tipo.equals(sim2.tipo)) {
+                                                Codigo_dasm += Cadena.codigo_a_var_est_glo;
+                                                Codigo_dasm += Generador.recuperar_dir_est_global(sim.posicion, sim2.posicion);
+                                                Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Incompatibilidad de tipos en la asignacion del atributo de estructura -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a acceder no encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }
+//===================================Asignacion de una Estructura ==============================                
+                    case Cadena.AS_ARR_EST:
+                    {
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre = nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local 
+                            //<editor-fold>
+                            if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                                Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                if (est != null) {
+                                    String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(1).Token.getColumna();
+                                    Simbolo sim2 = est.getAtributo(nombre2);
+                                    if (sim2 != null) {
+                                        if (sim2.TipoObjeto.equals(Cadena.arreglo)) {
+                                            ArrayList<retorno> val_dims = new ArrayList<>();
+                                            capturarEXP(val_dims, hijo.Hijos.get(2));
+                                            if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                if (sim2.numDims == val_dims.size()) { // comprobamos el numero de dimensiones                                                
+                                                    retorno ret = comprobarExp(hijo.Hijos.get(3));
+                                                    if (ret.tipo.equals(sim2.tipo)) {
+                                                        String et_error = Generador.generar_etq();
+                                                        String et_correcto = Generador.generar_etq();
+                                                        Codigo_dasm += Cadena.codigo_a_arr_est_loc;
+                                                        //codigo para comprobar los indices en ejecucion
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            Codigo_dasm += Generador.comprobarIndice_est_local((i + 1) + "", sim.posicion, sim2.posicion,cima.tamanio+"",val_dims.get(i).cod_generado, et_error);
+                                                        }
+                                                        // codigo para linealizar    
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            if (i == 0) {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                            } else {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion, cima.tamanio + "");
+                                                            }
+                                                        }
+                                                        //fin del arreglo
+                                                        Codigo_dasm += Generador.recuperar_dir_Arreglo_est_local(sim2.numDims + "", sim.posicion, sim2.posicion, cima.tamanio + "");
+                                                        Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                        //ahora lo del error 
+                                                        Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                        Codigo_dasm += et_error + ":\n";
+                                                        String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                        String cad2 = generarCodCad(sim2.nombre + "\n");
+                                                        //llamo a concat
+                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                        Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                        //llamo al funcion print
+                                                        Codigo_dasm += "//----------------------------------------------------\n";
+                                                        Codigo_dasm += et_correcto + ":\n";
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else {
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global 
+                                //<editor-fold>
+                                if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                                    Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                    if (est != null) {
+                                        String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(1).Token.getColumna();
+                                        Simbolo sim2 = est.getAtributo(nombre2);
+                                        if (sim2 != null) {
+                                            if (sim2.TipoObjeto.equals(Cadena.arreglo)) {
+                                                ArrayList<retorno> val_dims = new ArrayList<>();
+                                                capturarEXP(val_dims, hijo.Hijos.get(2));
+                                                if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                    if (sim2.numDims == val_dims.size()) { // comprobamos el numero de dimensiones                                                
+                                                        retorno ret = comprobarExp(hijo.Hijos.get(3));
+                                                        if (ret.tipo.equals(sim2.tipo)) {
+                                                            String et_error = Generador.generar_etq();
+                                                            String et_correcto = Generador.generar_etq();
+                                                            Codigo_dasm += Cadena.codigo_a_arr_est_glo;
+                                                            //codigo para comprobar los indices en ejecucion
+                                                            for (int i = 0; i < val_dims.size(); i++) {
+                                                                Codigo_dasm += Generador.comprobarIndice_est_global((i + 1) + "", sim.posicion, sim2.posicion, val_dims.get(i).cod_generado, et_error);
+                                                            }
+                                                            // codigo para linealizar    
+                                                            for (int i = 0; i < val_dims.size(); i++) {
+                                                                if (i == 0) {
+                                                                    Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                                } else {
+                                                                    Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion);
+                                                                }
+                                                            }
+                                                            //fin del arreglo
+                                                            Codigo_dasm += Generador.recuperar_dir_Arreglo_est_global(sim2.numDims + "", sim.posicion, sim2.posicion);
+                                                            Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                            //ahora lo del error 
+                                                            Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                            Codigo_dasm += et_error + ":\n";
+                                                            String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                            String cad2 = generarCodCad(sim2.nombre + "\n");
+                                                            //llamo a concat
+                                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                            Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                            Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                            //llamo al funcion print
+                                                            Codigo_dasm += "//----------------------------------------------------\n";
+                                                            Codigo_dasm += et_correcto + ":\n";
+                                                        } else {
+                                                            String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                            InterfazD.listaErrores.add(error);
+                                                            System.out.println(error);
+                                                        }
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El atributo al que desea acceder no es parte de la estrcutura definida -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El tipo de estructura de la variable no esta definido  -> " + sim.tipo + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La variable a acceder no es una estrcutura -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable no se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }
+//===================================Asignacion de un Arreglo ==================================                
+                    case Cadena.AS_VAR:{
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre = nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local
+                            //<editor-fold>
+                            retorno ret = comprobarExp(hijo.Hijos.get(1));
+                            if (sim.tipo.equals(ret.tipo)) {
+                                Codigo_dasm += Cadena.codigo_a_var_loc;
+                                Codigo_dasm += Generador.recuperar_dir_var_local(sim.posicion, cima.tamanio+"");
+                                Codigo_dasm += Generador.asignar_var_glob_loc_stack(ret.cod_generado);
+                            } else {
+                                String error = "ERROR SEMANTICO:Imcompatibilidad de tipos al asignar la varaible ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else { //puede que sea una var global                                            
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global
+                                //<editor-fold>                                                     
+                                retorno ret = comprobarExp(hijo.Hijos.get(1));
+                                if (sim.tipo.equals(ret.tipo)) {
+                                    Codigo_dasm += Cadena.codigo_a_var_glo;
+                                    Codigo_dasm += Generador.recuperar_dir_var_global(sim.posicion);
+                                    Codigo_dasm += Generador.asignar_var_glob_loc_stack(ret.cod_generado);
+                                } else {
+                                    String error = "ERROR SEMANTICO:Imcompatibilidad de tipos al asignar la varaible ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else { //la varibale no existe
+                                String error = "ERROR SEMANTICO: La variable a acceder no esta definida ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }                    
+//===================================Asignacion de un Arreglo ==================================                
+                    case Cadena.AS_ARR:{
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre= nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local 
+                            //<editor-fold>
+                            if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
+                                ArrayList<retorno> val_dims = new ArrayList<>();
+                                capturarEXP(val_dims, hijo.Hijos.get(1));
+                                if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                    if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones
+                                        retorno ret = comprobarExp(hijo.Hijos.get(2));
+                                        if (ret.tipo.equals(sim.tipo)) {
+                                            String et_error = Generador.generar_etq();
+                                            String et_correcto = Generador.generar_etq();
+                                            Codigo_dasm += Cadena.codigo_a_arr_loc;
+                                            //codigo para comprobar los indices en ejecucion
+                                            for (int i = 0; i < val_dims.size(); i++) {
+                                                Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,cima.tamanio+"",val_dims.get(i).cod_generado, et_error);
+                                            }
+                                            // codigo para linealizar    
+                                            for (int i = 0; i < val_dims.size(); i++) {
+                                                if (i == 0) {
+                                                    Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                } else {
+                                                    Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,cima.tamanio+"");
+                                                }
+                                            }
+                                            //fin del arreglo
+                                            Codigo_dasm += Generador.recuperar_dir_Arreglo_local(sim.numDims + "", sim.posicion,cima.tamanio+"");
+                                            Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                            //ahora lo del error 
+                                            Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                            Codigo_dasm += et_error + ":\n";
+                                            String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                            String cad2 = generarCodCad(sim.nombre + "\n");
+                                            //llamo a concat
+                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                            Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                            Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                            //llamo al funcion print
+                                            Codigo_dasm += "//----------------------------------------------------\n";
+                                            Codigo_dasm += et_correcto + ":\n";
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a asignar no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else {
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global 
+                                //<editor-fold>
+                                if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
+                                    ArrayList<retorno> val_dims = new ArrayList<>();
+                                    capturarEXP(val_dims, hijo.Hijos.get(1));
+                                    if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                        if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones
+                                            retorno ret = comprobarExp(hijo.Hijos.get(2));
+                                            if (ret.tipo.equals(sim.tipo)) {
+                                                String et_error = Generador.generar_etq();
+                                                String et_correcto = Generador.generar_etq();
+                                                Codigo_dasm += Cadena.codigo_a_arr_glo;
+                                                //codigo para comprobar los indices en ejecucion
+                                                for (int i = 0; i < val_dims.size(); i++) {
+                                                    Codigo_dasm += Generador.comprobarIndice_global((i + 1) + "", sim.posicion, val_dims.get(i).cod_generado, et_error);
+                                                }
+                                                // codigo para linealizar    
+                                                for (int i = 0; i < val_dims.size(); i++) {
+                                                    if (i == 0) {
+                                                        Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                    } else {
+                                                        Codigo_dasm += Generador.linealizar_arreglo_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion);
+                                                    }
+                                                }
+                                                //fin del arreglo
+                                                Codigo_dasm += Generador.recuperar_dir_Arreglo_global(sim.numDims + "", sim.posicion);
+                                                Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                //ahora lo del error 
+                                                Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                Codigo_dasm += et_error + ":\n";
+                                                String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                String cad2 = generarCodCad(sim.nombre + "\n");
+                                                //llamo a concat
+                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                //llamo al funcion print
+                                                Codigo_dasm += "//----------------------------------------------------\n";
+                                                Codigo_dasm += et_correcto + ":\n";
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La variable a asignar no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable no se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }
+//===================================Asignacion de un Arreglo ==================================                
+                    case Cadena.AS_ARR2:{
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre = nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local 
+                            //<editor-fold>
+                            if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
+                                Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                if (est != null) {
+                                    String nombre2 = hijo.Hijos.get(2).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(2).Token.getColumna();
+                                    Simbolo sim2 = est.getAtributo(nombre2);
+                                    if (sim2 != null) {
+                                        ArrayList<retorno> val_dims = new ArrayList<>();
+                                        capturarEXP(val_dims, hijo.Hijos.get(1));
+                                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                            if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones
+                                                retorno ret = comprobarExp(hijo.Hijos.get(3));
+                                                if (ret.tipo.equals(sim2.tipo)) {
+                                                    String et_error = Generador.generar_etq();
+                                                    String et_correcto = Generador.generar_etq();
+                                                    Codigo_dasm += Cadena.codigo_a_var_arr_loc;
+                                                    //codigo para comprobar los indices en ejecucion
+                                                    for (int i = 0; i < val_dims.size(); i++) {
+                                                        Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,cima.tamanio+"",val_dims.get(i).cod_generado, et_error);
+                                                    }
+                                                    // codigo para linealizar    
+                                                    for (int i = 0; i < val_dims.size(); i++) {
+                                                        if (i == 0) {
+                                                            Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                        } else {
+                                                            Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,cima.tamanio+"");
+                                                        }
+                                                    }
+                                                    //fin del arreglo
+                                                    Codigo_dasm += Generador.recuperar_dir_est_Arreglo_local(sim.numDims + "", sim.posicion,cima.tamanio+"",sim2.posicion);
+                                                    Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                    //ahora lo del error 
+                                                    Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                    Codigo_dasm += et_error + ":\n";
+                                                    String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                    String cad2 = generarCodCad(sim.nombre + "\n");
+                                                    //llamo a concat
+                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                    Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                    Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                    //llamo al funcion print
+                                                    Codigo_dasm += "//----------------------------------------------------\n";
+                                                    Codigo_dasm += et_correcto + ":\n";
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar la variable de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El atributo de estructura al que desea acceder no esta definido -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El arreglo al que inteta  acceder no es de estrcuturas -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else {
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global 
+                                //<editor-fold>
+                                if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
+                                    Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                    if (est != null) {
+                                        String nombre2 = hijo.Hijos.get(2).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(2).Token.getColumna();
+                                        Simbolo sim2 = est.getAtributo(nombre2);
+                                        if (sim2 != null) {
+                                            ArrayList<retorno> val_dims = new ArrayList<>();
+                                            capturarEXP(val_dims, hijo.Hijos.get(1));
+                                            if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones
+                                                    retorno ret = comprobarExp(hijo.Hijos.get(3));
+                                                    if (ret.tipo.equals(sim2.tipo)) {
+                                                        String et_error = Generador.generar_etq();
+                                                        String et_correcto = Generador.generar_etq();
+                                                        Codigo_dasm += Cadena.codigo_a_var_arr_glo;
+                                                        //codigo para comprobar los indices en ejecucion
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            Codigo_dasm += Generador.comprobarIndice_global((i + 1) + "", sim.posicion, val_dims.get(i).cod_generado, et_error);
+                                                        }
+                                                        // codigo para linealizar    
+                                                        for (int i = 0; i < val_dims.size(); i++) {
+                                                            if (i == 0) {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                            } else {
+                                                                Codigo_dasm += Generador.linealizar_arreglo_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion);
+                                                            }
+                                                        }
+                                                        //fin del arreglo
+                                                        Codigo_dasm += Generador.recuperar_dir_est_Arreglo_global(sim.numDims + "", sim.posicion, sim2.posicion);
+                                                        Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                        //ahora lo del error 
+                                                        Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                        Codigo_dasm += et_error + ":\n";
+                                                        String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                        String cad2 = generarCodCad(sim.nombre + "\n");
+                                                        //llamo a concat
+                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                        Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                        //llamo al funcion print
+                                                        Codigo_dasm += "//----------------------------------------------------\n";
+                                                        Codigo_dasm += et_correcto + ":\n";
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar la variable de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El atributo de estructura al que desea acceder no esta definido -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El arreglo al que inteta  acceder no es de estrcuturas -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable no se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }                    
+//===================================Asignacion de un Arreglo ==================================                
+                    case Cadena.AS_ARR3:{
+                        // <editor-fold defaultstate="collapsed">
+                        String nombre = nodo.Hijos.get(0).Token.getValor().toString();
+                        linea = nodo.Hijos.get(0).Token.getLinea();
+                        String columna = nodo.Hijos.get(0).Token.getColumna();
+                        Simbolo sim = existeVariable2(nombre);
+                        if (sim != null) { //es una variable local 
+                            //<editor-fold>
+                            if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
+                                Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                if (est != null) {
+                                    String nombre2 = hijo.Hijos.get(2).Token.getValor().toString();
+                                    columna = hijo.Hijos.get(2).Token.getColumna();
+                                    Simbolo sim2 = est.getAtributo(nombre2);
+                                    if (sim2 != null) {
+                                        if (sim2.TipoObjeto.equals(Cadena.arreglo)){
+                                            ArrayList<retorno> val_dims = new ArrayList<>();
+                                            capturarEXP(val_dims, hijo.Hijos.get(1));
+                                            if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)){
+                                                if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones 
+                                                    ArrayList<retorno> val_dims2 = new ArrayList<>();
+                                                    capturarEXP(val_dims2, hijo.Hijos.get(3));
+                                                    if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                        if (sim2.numDims == val_dims2.size()){
+                                                            retorno ret = comprobarExp(hijo.Hijos.get(4));
+                                                            if (ret.tipo.equals(sim2.tipo)){
+                                                                String et_error = Generador.generar_etq();
+                                                                String et_correcto = Generador.generar_etq();
+                                                                Codigo_dasm += Cadena.codigo_a_arr_arr_loc;
+                                                                //codigo para comprobar los indices en ejecucion
+                                                                for (int i = 0; i < val_dims.size(); i++) {
+                                                                    Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,cima.tamanio+"",val_dims.get(i).cod_generado, et_error);
+                                                                }
+                                                                // codigo para linealizar    
+                                                                for (int i = 0; i < val_dims.size(); i++) {
+                                                                    if (i == 0) {
+                                                                        Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                                    } else {
+                                                                        Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,cima.tamanio+"");
+                                                                    }
+                                                                }
+                                                                //fin del arreglo
+                                                                Codigo_dasm += Generador.recuperar_val_est_Arr_arr_local(sim.numDims + "", sim.posicion, sim2.posicion,cima.tamanio+"");
+
+                                                                //ahora hacemos el acceso del 2do arreglo                                                
+                                                                for (int i = 0; i < val_dims2.size(); i++) {
+                                                                    Codigo_dasm += Generador.comprobarIndice_Arr_arr_loc_gob((i + 1) + "", val_dims2.get(i).cod_generado, et_error);
+                                                                }
+                                                                // codigo para linealizar    
+                                                                for (int i = 0; i < val_dims2.size(); i++) {
+                                                                    if (i == 0) {
+                                                                        Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims2.get(i).cod_generado);
+                                                                    } else {
+                                                                        Codigo_dasm += Generador.linealizar_Arr_arr_Ndim_loc_gob(val_dims.get(i).cod_generado, (i + 1) + "");
+                                                                    }
+                                                                }
+                                                                Codigo_dasm += Generador.recuperar_dir_Arr_arr_loc_gob(sim2.numDims + "");
+                                                                Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                                //ahora lo del error                                                                 
+                                                                Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                                Codigo_dasm += et_error + ":\n";
+                                                                String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                                String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
+                                                                //llamo a concat
+                                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                                Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                                Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                                //llamo al funcion print
+                                                                Codigo_dasm += "//----------------------------------------------------\n";
+                                                                Codigo_dasm += et_correcto + ":\n";
+                                                            } else {
+                                                                String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                                InterfazD.listaErrores.add(error);
+                                                                System.out.println(error);
+                                                            }
+                                                        } else {
+                                                            String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo de la estructura a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                            InterfazD.listaErrores.add(error);
+                                                            System.out.println(error);
+                                                        }
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El atributo de la estructura a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El atributo de estructura al que desea acceder no esta definido -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: El arreglo al que inteta  acceder no es de estrcuturas -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                            //</editor-fold>
+                        } else {
+                            sim = existeVariable3(nombre);
+                            if (sim != null) { //es una variable global 
+                                //<editor-fold>
+                                if (sim.TipoObjeto.equals(Cadena.arreglo)){ //comprobamos que sea  un arreglo
+                                    Estructura est = Estructuras.retornaEstructura(sim.tipo);
+                                    if (est != null) {
+                                        String nombre2 = hijo.Hijos.get(2).Token.getValor().toString();
+                                        columna = hijo.Hijos.get(2).Token.getColumna();
+                                        Simbolo sim2 = est.getAtributo(nombre2);
+                                        if (sim2 != null) {
+                                            if (sim2.TipoObjeto.equals(Cadena.arreglo)) {
+                                                ArrayList<retorno> val_dims = new ArrayList<>();
+                                                capturarEXP(val_dims, hijo.Hijos.get(1));
+                                                if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                    if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones 
+                                                        ArrayList<retorno> val_dims2 = new ArrayList<>();
+                                                        capturarEXP(val_dims2, hijo.Hijos.get(3));
+                                                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                                                            if (sim2.numDims == val_dims2.size()) {
+                                                                retorno ret = comprobarExp(hijo.Hijos.get(4));
+                                                                if (ret.tipo.equals(sim2.tipo)) {
+                                                                    String et_error = Generador.generar_etq();
+                                                                    String et_correcto = Generador.generar_etq();
+                                                                    Codigo_dasm += Cadena.codigo_a_arr_arr_glo;
+                                                                    //codigo para comprobar los indices en ejecucion
+                                                                    for (int i = 0; i < val_dims.size(); i++) {
+                                                                        Codigo_dasm += Generador.comprobarIndice_global((i + 1) + "", sim.posicion, val_dims.get(i).cod_generado, et_error);
+                                                                    }
+                                                                    // codigo para linealizar    
+                                                                    for (int i = 0; i < val_dims.size(); i++) {
+                                                                        if (i == 0) {
+                                                                            Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
+                                                                        } else {
+                                                                            Codigo_dasm += Generador.linealizar_arreglo_Ndim_global(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion);
+                                                                        }
+                                                                    }
+                                                                    //fin del arreglo
+                                                                    Codigo_dasm += Generador.recuperar_val_est_Arr_arr_global(sim.numDims + "", sim.posicion, sim2.posicion);
+
+                                                                    //ahora hacemos el acceso del 2do arreglo                                                
+                                                                    for (int i = 0; i < val_dims2.size(); i++) {
+                                                                        Codigo_dasm += Generador.comprobarIndice_Arr_arr_loc_gob((i + 1) + "", val_dims2.get(i).cod_generado, et_error);
+                                                                    }
+                                                                    // codigo para linealizar    
+                                                                    for (int i = 0; i < val_dims2.size(); i++) {
+                                                                        if (i == 0) {
+                                                                            Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims2.get(i).cod_generado);
+                                                                        } else {
+                                                                            Codigo_dasm += Generador.linealizar_Arr_arr_Ndim_loc_gob(val_dims.get(i).cod_generado, (i + 1) + "");
+                                                                        }
+                                                                    }
+                                                                    Codigo_dasm += Generador.recuperar_dir_Arr_arr_loc_gob(sim2.numDims + "");
+                                                                    Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
+                                                                    //ahora lo del error                                                                 
+                                                                    Codigo_dasm += Cadena.br + et_correcto + "\n";
+                                                                    Codigo_dasm += et_error + ":\n";
+                                                                    String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
+                                                                    String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
+                                                                    //llamo a concat
+                                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                                    Codigo_dasm += "//------------------llamada a print ----------------\n";
+                                                                    Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
+                                                                    //llamo al funcion print
+                                                                    Codigo_dasm += "//----------------------------------------------------\n";
+                                                                    Codigo_dasm += et_correcto + ":\n";
+                                                                } else {
+                                                                    String error = "ERROR SEMANTICO: Imcompatibilidad de tipos al asignar el arreglo de estrcutura ->  " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                                    InterfazD.listaErrores.add(error);
+                                                                    System.out.println(error);
+                                                                }
+                                                            } else {
+                                                                String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo de la estructura a acceder, es incorrecto  -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                                InterfazD.listaErrores.add(error);
+                                                                System.out.println(error);
+                                                            }
+                                                        } else {
+                                                            String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                            InterfazD.listaErrores.add(error);
+                                                            System.out.println(error);
+                                                        }
+                                                    } else {
+                                                        String error = "ERROR SEMANTICO: El numero de dimensiones del arreglo a acceder, es incorrecto  -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                        InterfazD.listaErrores.add(error);
+                                                        System.out.println(error);
+                                                    }
+                                                } else {
+                                                    String error = "ERROR SEMANTICO: Todos los valores de dimension deben ser de tipo entero, arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                                    InterfazD.listaErrores.add(error);
+                                                    System.out.println(error);
+                                                }
+                                            } else {
+                                                String error = "ERROR SEMANTICO: El atributo de la estructura a acceder no es de tipo arreglo -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                                InterfazD.listaErrores.add(error);
+                                                System.out.println(error);
+                                            }
+                                        } else {
+                                            String error = "ERROR SEMANTICO: El atributo de estructura al que desea acceder no esta definido -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                        }
+                                    } else {
+                                        String error = "ERROR SEMANTICO: El arreglo al que inteta  acceder no es de estrcuturas -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                    }
+                                } else {
+                                    String error = "ERROR SEMANTICO: La variable a acceder no es de tipo arreglo -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                }
+                                //</editor-fold>
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable No se encuentra definida -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                            }
+                        }
+                        // </editor-fold>
+                        break;
+                    }                    
+//===================================Continuar =================================================
+                    case Cadena.CONTINUAR:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                    
+//=================================== Sentencia Detener ====================================                 
+                    case Cadena.DETENER:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Sentencia imprimir ====================================                 
+                    case Cadena.IMPRIMIR:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                       
+//=================================== funcion nativa linea ====================================                 
+                    case Cadena.LINEA:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Llamada a metodos o funciones ====================================                 
+                    case Cadena.LLAMADA:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }      
+//=================================== Sentencia Mietras ====================================                 
+                    case Cadena.MIENTRAS:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Sentencia incremento/decremento===================================                 
+                    case Cadena.OP:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }      
+//=================================== Funcion nativa Ovalo ====================================                 
+                    case Cadena.OVALO:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Sentencia PARA ====================================                 
+                    case Cadena.PARA:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Funcion nativa PUNTO ====================================                 
+                    case Cadena.PUNTO:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                                                
+//=================================== Sentencia retornar ====================================                 
+                    case Cadena.RETORNAR:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                         break;
+                    }                          
+//=================================== Sentencia  ================================================                 
+                    case Cadena.SELECT:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;
+                    }                        
+//=================================== Sentencia SI ====================================                 
+                    case Cadena.SI:{
+                        // <editor-fold defaultstate="collapsed">
+
+                        // </editor-fold>
+                        break;      
+                    }                                          
+                }                
+                //<editor-fold desc="Codigo debug">
+                if (debug) {
+                    if (lineadeb(linea) || debugeando) {
+                        pintarLinea(Integer.parseInt(linea), lineatmp);
+                        lineatmp = Integer.parseInt(linea);
+                        notificar("DEBUG ALERT: Se detuvo en la linea : " + linea);
+                        llenar_TS();
+                        imprimir_DASM(Codigo_dasm);
+                        this.suspend(); // good practice                                    
+                    }
+                }
+                //para el stop
+                if (detener) {
+                    return Codigo_dasm;
+                }
+                //</editor-fold>
+            }
+        }
+        return Codigo_dasm;
     }
     
     private Simbolo existeVariable(String id)// para acceso a variables ->  locales y globales
@@ -3314,7 +4810,6 @@ public class Traductor extends Thread{
         modelo.setColumnIdentifiers(encabezados);
         tablaS.setModel(modelo);
     }
-    
     
     private String generarCodCad(String cad){
         String cod_generado="";
