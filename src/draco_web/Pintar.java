@@ -34,14 +34,13 @@ public class Pintar {
    
    }
    
-    public void pintaRojo(int posini, int posfin) {
+    public void pintaRojo(int posini, int posfin){
         Style rojo = sc.addStyle("ConstantWidth", null);
         StyleConstants.setForeground(rojo, Color.decode("#FF4040"));
         doc.setCharacterAttributes(posini, posfin, rojo, false);
-
     }
 
-    public void pintaVerde(int posini, int posfin) {
+    public void pintaVerde(int posini, int posfin){
         Style verde = sc.addStyle("ConstantWidth", null);
         StyleConstants.setForeground(verde, Color.decode("#03CC5E"));
         doc.setCharacterAttributes(posini, posfin, verde, false);

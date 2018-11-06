@@ -30,7 +30,8 @@ public class DRACO_WEB {
         ///DibujarAST dibuja = new  DibujarAST();
         //dibuja.generarImg(raiz,"draco");        
         String cad="h";
-        
+        Runtime r =  Runtime.getRuntime();
+        r.gc();
         System.out.println("valor char-> "+ (int)cad.charAt(0)); 
         //System.out.println("aads"+cad);
     }

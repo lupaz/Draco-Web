@@ -105,7 +105,6 @@ public class InterpreteDas extends Thread{
         if(salto){
             ejecutar=false;
         }
-        
         for (Nodo Hijo : nodo.Hijos) {            
             if(ejecutar){
                 String linea="0";
@@ -167,6 +166,8 @@ public class InterpreteDas extends Thread{
                                 ejecutar(fun.Cuerpo,"",false);
                             }else{
                                 System.out.println("DASM: No se encontro la funcion ->"+nombre);
+                                notificar("ERROR DASM: No se encontro la funcion ->"+nombre+"\n");
+                                return;
                             }
                             break;
                             //</editor-fold>
@@ -440,6 +441,7 @@ public class InterpreteDas extends Thread{
                             Double v1 = pilaAux.pop();
                             if(v2 == 0.0){
                                 System.out.println("DASM: Error operacion indefinida, 0 en el modulo.");
+                                notificar("ERROR DASM: Error operacion indefinida, 0 en el modulo.\n");
                                 return;
                             }
                             Double res= v1%v2;
@@ -489,7 +491,8 @@ public class InterpreteDas extends Thread{
                                 break;
                             default:
                                 System.out.println("DASM : Error, formato invalido para Print.");
-                                break;
+                                notificar("DASM : Error, formato invalido para Print.\n");
+                                return;
                         }
                             break;
                             //</editor-fold>
@@ -546,7 +549,6 @@ public class InterpreteDas extends Thread{
         if (nodo != null) {
             for (Nodo Hijo : nodo.Hijos.get(0).Hijos) {
                 if (Hijo.Term != null) {
-
                     if (Hijo.Term.getNombre().equals(Cadena.FUNCTION)) {
                         String nombre = Hijo.Hijos.get(0).Token.getValor().toString();
                         Nodo body = Hijo.Hijos.get(1);
@@ -700,7 +702,7 @@ public class InterpreteDas extends Thread{
     public void run(){
         if(raiz!=null){
             capturarFuns(raiz);
-            ejecutar(raiz.Hijos.get(0),"",false);//ejecuta las senteicias globales
+            ejecutar(raiz.Hijos.get(0),"",false);//ejecuta las senteicias globales            
             ejecutarPrincipal(); //inicia la ejecucion del metodo principal
         }  
     }

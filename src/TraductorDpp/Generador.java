@@ -704,7 +704,7 @@ public class Generador {
         return res;
     }
     
-    static String recuperar_val_est_Arreglo_local(String no_dims,String pos_arr ,String pos_ambit, String pos_est){
+    static String recuperar_val_est_Arreglo_local(String no_dims,String pos_arr , String pos_est,String pos_ambit){
         String res="";
         res+=Cadena.get_local_0+enter;
         res+=pos_ambit+enter;
@@ -725,7 +725,7 @@ public class Generador {
         return res;
     }
     
-    static String recuperar_dir_est_Arreglo_local(String no_dims,String pos_arr ,String pos_ambit, String pos_est){
+    static String recuperar_dir_est_Arreglo_local(String no_dims,String pos_arr , String pos_est,String pos_ambit){
         String res="";
         res+=Cadena.get_local_0+enter;
         res+=pos_ambit+enter;
@@ -1014,7 +1014,7 @@ public class Generador {
         res+="1"+enter;
         res+=Cadena.Add+enter;
         res+=Cadena.Add+enter; //esto suma la linealizacion que quedo en pila
-        res+=Cadena.get_global_calc; //esto obtiene el valor y lo deja en pila
+        res+=Cadena.get_global_calc+enter; //esto obtiene el valor y lo deja en pila
         return res;
     }
     
@@ -1095,7 +1095,7 @@ public class Generador {
     }
     
     //esto es parte del acceso al arreglo inicial
-    static String recuperar_val_est_Arr_arr_local(String no_dims,String pos_arr ,String pos_ambit, String pos_est){
+    static String recuperar_val_est_Arr_arr_local(String no_dims,String pos_arr, String pos_est, String pos_ambit){
         String res="";
         res+=Cadena.get_local_0+enter;
         res+=pos_ambit+enter;
@@ -1224,8 +1224,9 @@ public class Generador {
         res+=pos_var+enter;
         res+=Cadena.Add+enter;
         return res;
-    }    
-    //</editor-fold>
+    }
+    
+    //</editor-fold>    
     
     //<editor-fold desc="Acceso a varaible global">
     static String recuperar_val_var_global(String pos_var){
@@ -1306,10 +1307,12 @@ public class Generador {
         
         String et_sig1=generar_etq();
         String et_sig2=generar_etq();
+        String et_sig3=generar_etq();
         String et_end= generar_etq();
-        String et_num = generar_etq();
-        String et_dec = generar_etq();
         String et_cad = generar_etq();
+        String et_num = generar_etq();
+        String et_car = generar_etq();
+        String et_dec = generar_etq();       
         String ini_cad= generar_etq();
         String fin_cad= generar_etq();
         String et_null= generar_etq();
@@ -1319,7 +1322,7 @@ public class Generador {
         res+="1"+enter;
         res+= Cadena.Add+enter;
         res+= Cadena.get_local_calc+enter; //con esto recupero el tipo de impresion;
-        // Enviare de parametros, -2 para cadena, -3 para entero, -4 para decimal
+        // Enviare de parametros, -2 para cadena, -3 para entero, -4 para decimal y -5 para caracter XD
         res+="2"+enter;
         res+=Cadena.Add+enter;
         res+=Cadena.br_if+et_cad+enter;
@@ -1384,11 +1387,37 @@ public class Generador {
         res+=Cadena.get_local_calc+enter;
         res+=Cadena._D+enter;
         res+=Cadena.Print+enter;
+        res+="10"+enter;
+        res+=Cadena._C+enter;
+        res+=Cadena.Print+enter;
         res+=Cadena.br+et_end+enter;
-        res+=et_sig2+" :"+enter;        
+        //comprobamos si es caracter
+        res+=et_sig2+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="5"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.br_if +et_car+enter;
+        res+=Cadena.br + et_sig3+enter;
+        res+= et_car+" :"+enter;        
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena._C+enter;
+        res+=Cadena.Print+enter;
+        res+="10"+enter;
+        res+=Cadena._C+enter;
+        res+=Cadena.Print+enter;
+        res+=Cadena.br+et_end+enter;
+        //sino es numero fijo es decimal XD
+        res+=et_sig3+" :"+enter;        
         res+=Cadena.get_local_0+enter;
         res+=Cadena.get_local_calc+enter;
         res+= Cadena._F+enter;
+        res+=Cadena.Print+enter;
+        res+="10"+enter;
+        res+=Cadena._C+enter;
         res+=Cadena.Print+enter;
         res+=et_end+" :"+enter; 
         res+=Cadena.End+enter;
@@ -1401,7 +1430,7 @@ public class Generador {
         res+= Cadena.get_local_0+enter;
         res+=tam_ambito+enter;
         res+=Cadena.Add+enter;
-        res+=cod_exp+enter;
+        res+=cod_exp;
         res+=Cadena.set_local_calc+enter;
         //paso del segundo parametro
         res+=Cadena.get_local_0+enter;
@@ -1562,6 +1591,382 @@ public class Generador {
     }
     //</editor-fold>
     
+    //<editor-fold desc="declaracion y llamada funcion num a cad">
+    static String funcion_num_a_cad(){
+        String res="";
+        
+        String et_digito=generar_etq();
+        String et_ciclo1= generar_etq();
+        String et_ciclo2=generar_etq();
+        String et_cierre = generar_etq();
+        
+        res+= Cadena.Function + "$num_a_cad"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="3"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.set_local_calc+enter;
+        //hasta este punto ya guarde el inicio (puntero heap) del numero temporal
+        res+=et_ciclo1+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="9"+enter;
+        res+= Cadena.Gt+enter;
+        res+=Cadena.br_if+et_digito+enter;
+        // aca compruebo que el numero sera mayor que 9  y aun es divisible etre 10
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="10"+enter;
+        res+=Cadena.Mod+enter;
+        res+="48"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        //hasta aca se saca el ascci del primer digito del numero
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_calc+enter;
+        //con lo aterio aumente la variable de iteracion
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="10"+enter;
+        res+=Cadena.Div+enter;
+        res+=Cadena.set_local_calc+enter;
+        //con lo anterio hice la division y deje el numero en la misma pos
+        res+=Cadena.br+et_ciclo1+enter;
+        
+        res+= et_digito+" :"+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="10"+enter;
+        res+=Cadena.Mod+enter;
+        res+="48"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        //seteamos el digito
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_calc+enter;
+        //aumentamos el iterardor
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.set_local_calc+enter;
+        //dejamos el incio de la cadena ya convertida en la pos 0 para el retorno
+        res+=et_ciclo2+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Gt+enter;
+        res+=Cadena.br_if+et_cierre+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="3"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //posicion de incio
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_global_calc+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        //con lo anterio recupero y asigno el valor en la nueva posicion solo que incio desde el ultimo valor insertado que es el primero del numero
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_calc+enter;
+        //disminuyo el iterador
+        res+=Cadena.br+et_ciclo2+enter;
+        res+=et_cierre+" :"+enter;
+        res+=Cadena.get_local_1+enter;
+        res+="0"+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        res+=Cadena.End+enter;
+        return res;
+    } 
+    
+    static String llamada_num_a_cad(String ambito_actul, String cod_num){
+        
+        String res="";
+        //pasamos el primer parametro: el numero
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=cod_num;
+        res+=Cadena.set_local_calc+enter;
+        //pasamos el segundo parametro; el iterador
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+="0"+enter;
+        res+=Cadena.set_local_calc+enter;
+        //hacemos el cambio de ambito y la llamda
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_0+enter;
+        res+=Cadena.Call+"$num_a_cad"+enter;
+        //vamos a dejar el puntero de la nueva cadena en la pila
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        //regresamos el ambito
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_0+enter;
+        return res;
+    }
+    
+    //</editor-fold>
+        
+    //<editor-fold desc="declaracion y llamada funcion car a cad">
+    static String car_a_cad(){
+        String res="";
+        res+= Cadena.Function + "$car_a_cad"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.set_local_calc+enter;
+        res+=Cadena.get_local_1+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.tee_local_1+enter;
+        res+="0"+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;
+        res+=Cadena.End+enter;
+        return res;
+    }
+    
+    static String llamada_car_a_cad(String ambito_actul, String charmel){
+        String res="";
+        //pasamos el primer parametro
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=charmel;
+        res+=Cadena.set_local_calc+enter;
+        //hacemos el cambio de ambito y la llamda
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_0+enter;
+        res+=Cadena.Call+"$car_a_cad"+enter;
+        //vamos a dejar el puntero de la nueva cadena en la pila
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        //regresamos el ambito
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_0+enter;
+        return res;
+    }
+    //</editor-fold>
+    
+    //<editor-fold desc="llamadas a funiones/metodos">
+    public static String paso_parametro(String pos_par,String ambito_actual,String cod_exp){
+        String res ="";
+        res += Cadena.get_local_0 + enter ;
+        res += ambito_actual + enter;
+        res += Cadena.Add + enter;
+        res += pos_par + enter;
+        res += Cadena.Add + enter;
+        res += cod_exp;
+        res += Cadena.set_local_calc + enter;
+        return  res;
+    }
+    
+    public static String aumentar_ambito(String ambito_actual){
+        String res="";        
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actual+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_0+enter;
+        return res;        
+    }
+    
+    public static String llamada_sin_ret(String funcion){        
+        String res="";
+        res+=Cadena.Call+"$"+funcion+enter;
+        return res;        
+    }
+    
+    public static String llamada_con_ret(String funcion){        
+        String res="";
+        res+=Cadena.Call+"$"+funcion+enter;
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        return res;        
+    }
+    
+    public static String disminuir_ambito(String ambito_actual){
+        String res="";
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actual+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_0+enter;
+        return res;
+    }
+    
+    
+    //</editor-fold>
+    
+    //<editor-fold desc="Aumento de variable local y global">
+    
+    static String aumentar_var_loc(String pos_var,String pos_ambit){
+        String res="";
+        //con esto recupero la pos para asignarla
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        //ahora recuperare el valor
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //ahora va la magia
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        //ahora la asignamos
+        res+=Cadena.set_local_calc+enter; 
+        return res;        
+    }
+    
+    static String disminuir_var_loc(String pos_var,String pos_ambit){
+        String res="";
+        //con esto recupero la pos para asignarla
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        //ahora recuperare el valor
+        res+=Cadena.get_local_0+enter;
+        res+=pos_ambit+enter;
+        res+=Cadena.Diff+enter;
+        //----parte estrcutura
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //ahora va la magia
+        res+="1"+enter;
+        res+=Cadena.Diff+enter;
+        //ahora la asignamos
+        res+=Cadena.set_local_calc+enter; 
+        return res;        
+    }
+    
+    static String aumentar_var_glo(String pos_var){
+        String res="";
+        //recuperamos la direccion
+        res+=Cadena.get_local_2+enter;
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        //recuperamos el valor
+        res+=Cadena.get_local_2+enter;
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //ahora va la magia
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        //ahora asignamos
+        res+=Cadena.set_local_calc+enter;
+        return res;
+    }
+    
+    static String disminuir_var_glo(String pos_var){
+        String res="";
+        //recuperamos la direccion
+        res+=Cadena.get_local_2+enter;
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        //recuperamos el valor
+        res+=Cadena.get_local_2+enter;
+        res+=pos_var+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        //ahora va la magia
+        res+="1"+enter;
+        res+=Cadena.Diff+enter;
+        //ahora asignamos
+        res+=Cadena.set_local_calc+enter;
+        return res;
+    }
+    
+    //</editor-fold>
+    
+    
+    
     static String generar_etq(){
         return "L"+numEtq++;
     }
@@ -1571,6 +1976,10 @@ public class Generador {
                 cantidad+"\n"+
                 "add\n"+
                 "set_local 1\n";
+    }
+    
+    public static void reset(){
+        numEtq=0;
     }
     
 }

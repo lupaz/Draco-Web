@@ -11,6 +11,7 @@ import Dasm.Scan_Dasm;
 import Dplusplus.Par_Dplus;
 import Dplusplus.Scan_Dplus;
 import EjecucionDASM.InterpreteDas;
+import TraductorDpp.Generador;
 import TraductorDpp.Traductor;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -448,7 +449,17 @@ public class InterfazD extends javax.swing.JFrame{
     }//GEN-LAST:event_guardarActionPerformed
 
     private void actualizaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_actualizaActionPerformed
-        // TODO add your handling code here:
+       lineatmp=-1;
+        int index = tabs.getSelectedIndex();        
+        String title = tabs.getTitleAt(index); 
+        if(title.contains(".dasm")){
+            JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
+            JPanel  tmpP = (JPanel)scroll.getViewport().getView();
+            LineasText tmpL = (LineasText)tmpP.getComponent(0);
+            tmpL.text_pane.setText(Traductor.codigo_generado);  
+        }else{ //actualizo el arbol
+        
+        } 
     }//GEN-LAST:event_actualizaActionPerformed
 
     private void cargarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cargarActionPerformed
@@ -578,9 +589,13 @@ public class InterfazD extends javax.swing.JFrame{
 
     private void debugActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_debugActionPerformed
         lineatmp=-1;
+        inter=null;
+        traduc=null;
         int index = tabs.getSelectedIndex();        
         String title = tabs.getTitleAt(index); 
-        if(title.contains(".dpp")){
+        if(title.contains(".dpp")){            
+            Generador.reset();
+            Traductor.reset();
             try {
                 JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
                 JPanel  tmpP = (JPanel)scroll.getViewport().getView();
@@ -609,14 +624,14 @@ public class InterfazD extends javax.swing.JFrame{
         }else if(title.contains(".ds")){
             //aca ira el analisis de dracoscript
         
-        }else if(title.contains(".dasm")){
+        }else if(title.contains(".dasm")){            
             try {
                 JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
                 JPanel  tmpP = (JPanel)scroll.getViewport().getView();
                 LineasText tmpL = (LineasText)tmpP.getComponent(0);
                 Scan_Dasm scanner = new Scan_Dasm(new BufferedReader(new StringReader(tmpL.text_pane.getText())));
                 scanner.nomArch=title;
-                 Par_Dasm parser = new Par_Dasm(scanner);
+                Par_Dasm parser = new Par_Dasm(scanner);
                 parser.nombreArch=title;
                 parser.parse();
                 if(notificarErrrores()){
@@ -630,8 +645,7 @@ public class InterfazD extends javax.swing.JFrame{
                 dpp=false;
                 inter = new InterpreteDas(parser.raiz, tmpL.lineasdeb,title);
                 inter.iniComponentes(tStack, tHeap, tPila, consola,tmpL);
-                inter.start();
-                
+                inter.start();                
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }
@@ -643,10 +657,13 @@ public class InterfazD extends javax.swing.JFrame{
     }//GEN-LAST:event_debugActionPerformed
 
     private void compilaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compilaActionPerformed
-       
+        inter=null;
+        traduc=null;
         int index = tabs.getSelectedIndex();        
         String title = tabs.getTitleAt(index); 
         if(title.contains(".dpp")){
+            Generador.reset();
+            Traductor.reset();
             try {
                 JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
                 JPanel  tmpP = (JPanel)scroll.getViewport().getView();
@@ -713,7 +730,7 @@ public class InterfazD extends javax.swing.JFrame{
                 scrollPane.setViewportView(tmpP2);
                 tabs.addTab("traduccion.dasm",scrollPane);
                 tabs.setSelectedIndex(tabs.getTabCount()-1);
-                tmpL2.text_pane.setText(traduc.codigo_generado);                
+                tmpL2.text_pane.setText(Traductor.codigo_generado);                
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }            
@@ -721,7 +738,6 @@ public class InterfazD extends javax.swing.JFrame{
             //aca ira el analisis de dracoscript
             //alto nivel 
         }else if(title.contains(".dasm")){
-            //aca va dasmito
              try {
                 JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
                 JPanel  tmpP = (JPanel)scroll.getViewport().getView();
@@ -925,7 +941,6 @@ public class InterfazD extends javax.swing.JFrame{
         return false;
     }
     
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu Archivo;
     private javax.swing.JMenuItem actualiza;

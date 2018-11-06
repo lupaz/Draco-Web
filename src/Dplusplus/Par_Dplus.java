@@ -2003,7 +2003,7 @@ class CUP$Par_Dplus$actions {
 		int logright = ((java_cup.runtime.Symbol)CUP$Par_Dplus$stack.elementAt(CUP$Par_Dplus$top-2)).right;
 		Nodo log = (Nodo)((java_cup.runtime.Symbol) CUP$Par_Dplus$stack.elementAt(CUP$Par_Dplus$top-2)).value;
 		
-                    RESULT = new Nodo(Cadena.DETENER);
+                    RESULT = new Nodo(Cadena.IMPRIMIR);
                     RESULT.Hijos.add(new Nodo(ide,(Object)ide,ideleft+1,ideright+1));
                     RESULT.Hijos.add(log);
                 

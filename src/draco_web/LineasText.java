@@ -50,7 +50,7 @@ public class LineasText extends JPanel{
   public void paint (Graphics g){
     super.paint (g);
     int start =
-      text_pane.viewToModel (scrollPane.getViewport ().getViewPosition ());
+      text_pane.viewToModel(scrollPane.getViewport ().getViewPosition ());
     int end =
       text_pane.viewToModel (new
 		   Point (scrollPane.getViewport ().getViewPosition ().x +
@@ -64,7 +64,7 @@ public class LineasText extends JPanel{
     
     for (int line = startline, y = 0; line <= endline;line++, y += fontHeight){
             g.drawString (Integer.toString (line), 0, y);
-      }
+    }
   }
   
   public boolean exiteLine(int linea){
