@@ -1301,7 +1301,7 @@ public class Generador {
     //</editor-fold>
     
     //<editor-fold desc="declaracion y llamada funcion printer">
-    
+    //ambito de printer = 2;
     static String funcion_print(){
         String res="";
         
@@ -1456,6 +1456,7 @@ public class Generador {
     //</editor-fold>
     
     //<editor-fold desc="declaracion y llamada funcion concat">
+    //ambito concat =3
     static String funcion_concat(){
         String res="";
         
@@ -1592,6 +1593,7 @@ public class Generador {
     //</editor-fold>
     
     //<editor-fold desc="declaracion y llamada funcion num a cad">
+    //ambito num a cad = 5
     static String funcion_num_a_cad(){
         String res="";
         
@@ -1605,6 +1607,30 @@ public class Generador {
         res+="3"+enter;
         res+=Cadena.Add+enter;
         res+=Cadena.get_local_1+enter;
+        res+=Cadena.set_local_calc+enter;
+        //vamos a comprobar si es negativo
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Lt+enter;
+        res+=Cadena.br_if+et_ciclo1+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="4"+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.set_local_calc+enter;
+        //con lo anterior ponemos la bandera en 1
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;        
+        res+="-1"+enter;
+        res+=Cadena.Mult+enter;
         res+=Cadena.set_local_calc+enter;
         //hasta este punto ya guarde el inicio (puntero heap) del numero temporal
         res+=et_ciclo1+" :"+enter;
@@ -1653,7 +1679,6 @@ public class Generador {
         res+=Cadena.set_local_calc+enter;
         //con lo anterio hice la division y deje el numero en la misma pos
         res+=Cadena.br+et_ciclo1+enter;
-        
         res+= et_digito+" :"+enter;
         res+=Cadena.get_local_1+enter;
         res+=Cadena.get_local_0+enter;
@@ -1682,8 +1707,20 @@ public class Generador {
         //aumentamos el iterardor
         res+=Cadena.get_local_0+enter;
         res+=Cadena.get_local_1+enter;
-        res+=Cadena.set_local_calc+enter;
+        res+=Cadena.set_local_calc+enter;        
         //dejamos el incio de la cadena ya convertida en la pos 0 para el retorno
+        res+=Cadena.get_local_0+enter;
+        res+="4"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.br_if+et_ciclo2+enter;        
+        res+=Cadena.get_local_1+enter;
+        res+="45"+enter;
+        res+=Cadena.tee_global_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_1+enter;      
+        //con lo anterios validamos el negatico y colocamos el signo
         res+=et_ciclo2+" :"+enter;
         res+=Cadena.get_local_0+enter;
         res+="2"+enter;
@@ -1753,6 +1790,14 @@ public class Generador {
         res+=Cadena.Add+enter;
         res+="0"+enter;
         res+=Cadena.set_local_calc+enter;
+        //pasamos el 5to parametro; la bandera
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="4"+enter;
+        res+=Cadena.Add+enter;
+        res+="0"+enter;
+        res+=Cadena.set_local_calc+enter;
         //hacemos el cambio de ambito y la llamda
         res+=Cadena.get_local_0+enter;
         res+=ambito_actul+enter;
@@ -1773,7 +1818,8 @@ public class Generador {
     //</editor-fold>
         
     //<editor-fold desc="declaracion y llamada funcion car a cad">
-    static String car_a_cad(){
+    //ambito car a cad = 2
+    static String funcion_car_a_cad(){
         String res="";
         res+= Cadena.Function + "$car_a_cad"+enter;
         res+=Cadena.get_local_0+enter;
@@ -1822,6 +1868,246 @@ public class Generador {
         res+=Cadena.Diff+enter;
         res+=Cadena.set_local_0+enter;
         return res;
+    }
+    //</editor-fold>
+    
+    //<editor-fold desc="declaracion y llamada funcion potencia">
+    static  String funcion_potencia(){
+        String res="";
+        
+        String inicio = generar_etq();
+        String val2 = generar_etq();
+        String val3 = generar_etq();
+        String voltea = generar_etq();
+        String fin = generar_etq();
+        res+= Cadena.Function + "$potencia"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Eqz+enter;
+        res+=Cadena.br_if+val2+enter;
+        //cuando es potencia a la 0
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.set_local_calc+enter;
+        res+= Cadena.br+fin+enter;
+        // hacemos la 2da validacion
+        res+=val2+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Gt+enter;
+        res+=Cadena.br_if+val3+enter; //se va a la poencia negativa
+        //si es positiva hacemos lo sig                
+        res+=inicio+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Gt+enter;
+        res+=Cadena.br_if+fin+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        //recuperamos el multiplicador
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        // segundo multi
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.Mult+enter;
+        res+=Cadena.set_local_calc+enter;
+        ///
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Diff+enter;
+        res+= Cadena.set_local_calc+enter;
+        res+= Cadena.br+inicio+enter;
+        ///validacion 3 es potencia negativa
+        res+=val3+ " :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="0"+enter;
+        res+=Cadena.Lt+enter;
+        res+=Cadena.br_if+voltea+enter;
+        ////operamos
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        //recuperamos el multiplicador
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        // segundo multi
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.Mult+enter;
+        res+=Cadena.set_local_calc+enter;
+        ///        
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+= Cadena.set_local_calc+enter;
+        res+= Cadena.br+val3+enter;
+        //
+        res+=voltea+" :"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.get_local_0+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.get_local_calc+enter;
+        res+=Cadena.Div+enter;
+        res+=Cadena.set_local_calc+enter;
+        res+=fin+" :"+enter;
+        res+=Cadena.End+enter;
+        return res;
+    }
+        
+    static String llamada_potencia(String ambito_actul, String val, String pot){
+        
+        String res="";
+        //pasamos el primer parametro
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="0"+enter;
+        res+=Cadena.Add+enter;
+        res+=val;
+        res+=Cadena.set_local_calc+enter;        
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=pot;
+        res+=Cadena.set_local_calc+enter;
+        //pasamos el segundo parametro;
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="2"+enter;
+        res+=Cadena.Add+enter;
+        res+=val ;
+        res+=Cadena.set_local_calc+enter;
+        //hacemos el cambio de ambito y la llamda
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_0+enter;
+        res+=Cadena.Call+"$potencia"+enter;
+        //vamos a dejar el puntero de la nueva cadena en la pila
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        //regresamos el ambito
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_0+enter;
+        return res;
+    }
+    
+    //</editor-fold>
+     
+    //<editor-fold desc="declaracion y llamada funcion ascii_cad">
+    //ambito de ascci = 2;
+    static  String funcion_ascii_cad(){
+        String res="";
+        String inicio = generar_etq();
+        String fin = generar_etq();
+        res+= Cadena.Function + "$ascii_cad"+enter;
+        res+= inicio+" :"+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.get_local_calc+enter;
+        res+= Cadena.get_global_calc+enter;
+        res+= Cadena.br_if+fin+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= Cadena.get_local_calc+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.get_local_calc+enter;
+        res+= Cadena.get_global_calc+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.set_local_calc+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.get_local_0+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.get_local_calc+enter;
+        res+= "1"+enter;
+        res+= Cadena.Add+enter;
+        res+= Cadena.set_local_calc+enter;
+        res+= Cadena.br+inicio+enter;
+        res+= fin+" :"+enter;        
+        res+= Cadena.End+enter;
+        return  res;
+    }
+    
+    static String llamada_ascii_cad(String ambito_actul, String val){
+        String res="";
+        //pasamos el primer parametro
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="1"+enter;
+        res+=Cadena.Add+enter;
+        res+=val;
+        res+=Cadena.set_local_calc+enter;
+        //pasamos el primer parametro
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+="0"+enter;
+        res+=Cadena.Add+enter;
+        res+="0"+enter;
+        res+=Cadena.set_local_calc+enter;
+        //hacemos el cambio de ambito y la llamda
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Add+enter;
+        res+=Cadena.set_local_0+enter;
+        res+=Cadena.Call+"$ascii_cad"+enter;
+        //vamos a dejar el puntero de la nueva cadena en la pila
+        res+=Cadena.get_local_0+enter;
+        res+=Cadena.get_local_calc+enter;
+        //regresamos el ambito
+        res+=Cadena.get_local_0+enter;
+        res+=ambito_actul+enter;
+        res+=Cadena.Diff+enter;
+        res+=Cadena.set_local_0+enter;
+        return  res; 
     }
     //</editor-fold>
     
@@ -1965,7 +2251,25 @@ public class Generador {
     
     //</editor-fold>
     
+    //<editor-fold desc="Aumento de variable local y global">
     
+    static String si_simplificado(String cod_cond, String cod_exp1, String cod_exp2){
+        String res="";
+        
+        String falso=generar_etq();
+        String fin = generar_etq();        
+        
+        res+= cod_cond;
+        res+= Cadena.br_if+falso+enter;
+        res+= cod_exp1;
+        res+= Cadena.br+fin+enter;
+        res+= falso+" :"+enter;
+        res+= cod_exp2;
+        res+=fin+" :"+enter;        
+        return res;        
+    } 
+    
+    //</editor-fold>
     
     static String generar_etq(){
         return "L"+numEtq++;

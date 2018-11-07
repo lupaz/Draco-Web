@@ -9,6 +9,7 @@ import AST.Nodo;
 import Dasm.Cadena;
 import draco_web.LineasText;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Stack;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -328,6 +329,13 @@ public class InterpreteDas extends Thread{
                         case Cadena.And: {
                             //<editor-fold>
                             linea = Hijo.Token.getLinea();
+                            Double v2= pilaAux.pop();
+                            Double v1 = pilaAux.pop();
+                            if(v1 == 1.0 && v2 == 1.0 ){
+                                pilaAux.push(1.0);
+                            }else{
+                                pilaAux.push(0.0);
+                            }
                             break;
                             //</editor-fold>
                         }
@@ -369,6 +377,32 @@ public class InterpreteDas extends Thread{
                             break;
                             //</editor-fold>
                         }
+                        case Cadena.Eqz: {
+                            //<editor-fold>
+                            linea = Hijo.Token.getLinea();
+                            Double v2= pilaAux.pop();
+                            Double v1 = pilaAux.pop();
+                            if(Objects.equals(v1, v2)){
+                                pilaAux.push(1.0);
+                            }else{
+                                pilaAux.push(0.0);
+                            }
+                            break;
+                            //</editor-fold>
+                        }
+                        case Cadena.Eqs: {
+                            //<editor-fold>
+                            linea = Hijo.Token.getLinea();
+                            Double v2= pilaAux.pop();
+                            Double v1 = pilaAux.pop();
+                            if(!Objects.equals(v2,v1)){
+                                pilaAux.push(1.0);
+                            }else{
+                                pilaAux.push(0.0);
+                            }
+                            break;
+                            //</editor-fold>
+                        }
                         case Cadena.F: { //insertare un -4
                             //<editor-fold>
                             linea = Hijo.Token.getLinea();
@@ -389,6 +423,22 @@ public class InterpreteDas extends Thread{
                             break;
                             //</editor-fold>
                         }
+                        case Cadena.Pot:{
+                            //<editor-fold>
+                            try {
+                                linea = Hijo.Token.getLinea();
+                                Double v2= pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                Double res= Math.pow(v1,v2);
+                                pilaAux.push(res);
+                            } catch (Exception e) {
+                                System.out.println("DASM: Error potencia fuera de rango.");
+                                notificar("ERROR DASM: Error potencia fuera de rango.\n");
+                                return;
+                            }                            
+                            break;
+                            //</editor-fold>
+                        }                        
                         case Cadena.Gte: {
                             //<editor-fold>
                             linea = Hijo.Token.getLinea();
@@ -461,12 +511,26 @@ public class InterpreteDas extends Thread{
                         }
                         case Cadena.Not: {
                             //<editor-fold>
+                            linea = Hijo.Token.getLinea();                            
+                            Double v1 = pilaAux.pop();
+                            if(v1 == 1.0){
+                                pilaAux.push(0.0);
+                            }else{
+                                pilaAux.push(1.0);
+                            }
                             break;
                             //</editor-fold>
                         }
                         case Cadena.Or: {
                             //<editor-fold>
                             linea = Hijo.Token.getLinea();
+                            Double v2= pilaAux.pop();
+                            Double v1 = pilaAux.pop();
+                            if(v1 == 1.0 || v2 == 1.0 ){
+                                pilaAux.push(1.0);
+                            }else{
+                                pilaAux.push(0.0);
+                            }
                             break;
                             //</editor-fold>
                         }

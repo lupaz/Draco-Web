@@ -10,7 +10,7 @@ parser code
     public Nodo raiz;
     public String nombreArch;
     
-public void syntax_error(Symbol s){
+    public void syntax_error(Symbol s){
         String error="ERROR SINTACTICO RECUPERABLE: Se esperava otro token en lugar de ->  "+s.value+ "  L: "+(s.left+1)+" C: "+(s.right+1)+ " DOC: "+nombreArch;
         //InterfazD.listaErrores.add(error);
         System.out.println(error);
@@ -33,7 +33,7 @@ action code
 :}
 
 
-terminal String Add,Diff,Mul,Div,Mod,Call,Calc,Function,End,Eqz,Lt,Gt,Lte,Gte,And,Or,Not;
+terminal String Add,Diff,Mul,Div,Pot,Mod,Call,Calc,Function,End,Eqz,Eqs,Lt,Gt,Lte,Gte,And,Or,Not;
 terminal id, enter,decim, Br_if,Br__if,Br,Print;
 terminal DOLAR,DPUNTOS,MENOS,C,D,F;
 terminal String get_local, set_local,get_global,set_global,tee_local,tee_global, point,quadrate,oval,line,string;
@@ -75,7 +75,6 @@ SENT ::= id:ide DPUNTOS
                 {:
                     RESULT = new Nodo(Cadena.Label,(Object)ide,ideleft+1,ideright+1);
                 :} 
-        
         | MENOS enter:ide
                 {:
                     RESULT = new Nodo(Cadena.numero,"-"+(Object)ide,ideleft+1,ideright+1);
@@ -104,14 +103,15 @@ SENT ::= id:ide DPUNTOS
                 {:
                     RESULT = new Nodo(Cadena.Mul,(Object)ide,ideleft+1,ideright+1);
                 :}
-        | Div:ide
-                {:
-                    RESULT = new Nodo(Cadena.Div,(Object)ide,ideleft+1,ideright+1);
-                :}
         | Mod:ide
                 {:
                     RESULT = new Nodo(Cadena.Mod,(Object)ide,ideleft+1,ideright+1);
                 :}
+        | Div:ide
+                {:
+                    RESULT = new Nodo(Cadena.Div,(Object)ide,ideleft+1,ideright+1);
+                :}
+        
         | Call FUN:fu
                 {:
                     RESULT = fu;
@@ -138,6 +138,10 @@ SENT ::= id:ide DPUNTOS
                 {:
                     RESULT = new Nodo(Cadena.Eqz,(Object)ide,ideleft+1,ideright+1);
                 :}
+        | Eqs:ide
+                {:
+                    RESULT = new Nodo(Cadena.Eqs,(Object)ide,ideleft+1,ideright+1);
+                :}        
         | Lt:ide
                 {:
                     RESULT = new Nodo(Cadena.Lt,(Object)ide,ideleft+1,ideright+1);
@@ -161,7 +165,7 @@ SENT ::= id:ide DPUNTOS
         | Or:ide
                 {:
                     RESULT = new Nodo(Cadena.Or,(Object)ide,ideleft+1,ideright+1);
-                :}
+                :}       
         | Not:ide
                 {:
                     RESULT = new Nodo(Cadena.Not,(Object)ide,ideleft+1,ideright+1);
@@ -215,6 +219,10 @@ SENT ::= id:ide DPUNTOS
                 {:
                    RESULT = new Nodo(Cadena.Print,(Object)ide,ideleft+1,ideright+1);
                 :}
+        | Pot:ide
+                {:
+                    RESULT = new Nodo(Cadena.Pot,(Object)ide,ideleft+1,ideright+1);
+                :}             
 ;
 
 FUN ::= DOLAR id:ide

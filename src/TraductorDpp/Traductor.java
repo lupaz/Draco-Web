@@ -8,7 +8,6 @@ package TraductorDpp;
 
 import AST.Nodo;
 import Dplusplus.*;
-
 import java.util.ArrayList;
 import java.util.Stack;
 import draco_web.InterfazD;
@@ -76,6 +75,12 @@ public class Traductor extends Thread{
         codigo_generado+=Generador.funcion_concat();
         codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
         codigo_generado+=Generador.funcion_num_a_cad();
+        codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        codigo_generado+=Generador.funcion_car_a_cad();
+        codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        codigo_generado+=Generador.funcion_potencia();
+        codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        codigo_generado+=Generador.funcion_ascii_cad();
     }
     
     public Traductor(Nodo raiz,String nombArchivo){
@@ -94,6 +99,12 @@ public class Traductor extends Thread{
         codigo_generado+=Generador.funcion_concat();
         codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
         codigo_generado+=Generador.funcion_num_a_cad();
+        codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        codigo_generado+=Generador.funcion_car_a_cad();
+        codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        codigo_generado+=Generador.funcion_ascii_cad();
+        //codigo_generado+="//-------------------------Fun Nativa---------------------------\n";
+        //codigo_generado+=Generador.funcion_potencia();
     }
     
     public retorno comprobarExp(Nodo nodo) {
@@ -106,11 +117,24 @@ public class Traductor extends Thread{
                         String column = (nodo.Hijos.get(1).Token.getColumna() + 1) + "";
                         retorno ret = comprobarExp(nodo.Hijos.get(0));
                         if (ret.tipo.equals(Cadena.booleano)) {
-                            if (ret.valor.toString().equals("verdadero") || ret.valor.toString().equals("'verdadero'")) {
-                                return comprobarExp(nodo.Hijos.get(2));
-                            } else {
-                                return comprobarExp(nodo.Hijos.get(3));
-                            }
+                            retorno exp1 = comprobarExp(nodo.Hijos.get(2));
+                            retorno exp2 = comprobarExp(nodo.Hijos.get(3));                            
+                            if(!exp1.tipo.equals(Cadena.error)&& !exp2.tipo.equals(Cadena.error)){                                
+                                if(exp1.tipo.equals(exp2.tipo)){
+                                    String cod_das = Generador.si_simplificado(ret.cod_generado,exp1.cod_generado,exp2.cod_generado);
+                                    exp1.cod_generado = cod_das;
+                                    exp1.Linea = line;
+                                    exp1.Columna = column;
+                                    return exp1;
+                                }else{
+                                    String error = "ERROR SEMANTICO: Las Expresiones del SI-SINO simple no deben ser del mismo tipo -> COND " + " L: " + line + " C: " + column + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                    return new retorno("error", Cadena.error, line, column);
+                                }                                
+                            }else{
+                                return new retorno("error", Cadena.error, line, column);
+                            }                            
                         } else {
                             String error = "ERROR SEMANTICO: La condicion del SI-SINO simple no retorno un booleano -> COND " + " L: " + line + " C: " + column + " Archivo: " + archivoActual;
                             InterfazD.listaErrores.add(error);
@@ -124,18 +148,26 @@ public class Traductor extends Thread{
                         retorno ret22 = comprobarExp(nodo.Hijos.get(2));
                         if (ret2.tipo.equals(Cadena.booleano) && ret22.tipo.equals(Cadena.booleano)) {
                             switch (nodo.Hijos.get(1).Token.getValor().toString()) {
-                                case "||":
-                                    if (ret2.valor.toString().equals("verdadero") || ret2.valor.toString().equals("'verdadero'") || ret22.valor.toString().equals("verdadero") || ret22.valor.toString().equals("'verdadero'")) {
-                                        return new retorno("verdadero", Cadena.booleano, line2, column2);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line2, column2);
-                                    }
-                                case "&&":
-                                    if ((ret2.valor.toString().equals("verdadero") || ret2.valor.toString().equals("'verdadero'")) && (ret22.valor.toString().equals("verdadero") || ret22.valor.toString().equals("'verdadero'"))) {
-                                        return new retorno("verdadero", Cadena.booleano, line2, column2);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line2, column2);
-                                    }
+                                case "||":{
+                                    String cod_dasm = ret2.cod_generado;
+                                    cod_dasm += ret22.cod_generado;
+                                    cod_dasm += Cadena.or + "\n";
+                                    ret2.cod_generado = cod_dasm;
+                                    ret2.Linea = line2;
+                                    ret2.Columna = column2;
+                                    ret2.tipo = Cadena.booleano;
+                                    return ret2;
+                                }                                  
+                                case "&&":{
+                                    String cod_dasm = ret2.cod_generado;
+                                    cod_dasm += ret22.cod_generado;
+                                    cod_dasm += Cadena.and + "\n";
+                                    ret2.cod_generado = cod_dasm;
+                                    ret2.Linea = line2;
+                                    ret2.Columna = column2;
+                                    ret2.tipo = Cadena.booleano;
+                                    return ret2;
+                                }                                    
                             }
                         } else {
                             String error = "ERROR SEMANTICO: Una de las expresiones a evaluar en la condicion logica no es de tipo booleano -> EXP " + " L: " + line2 + " C: " + column2 + " Archivo: " + archivoActual;
@@ -157,89 +189,167 @@ public class Traductor extends Thread{
                         String column3 = (nodo.Hijos.get(1).Token.getColumna() + 1) + "";
                         retorno ret3 = comprobarExp(nodo.Hijos.get(0));
                         retorno ret33 = comprobarExp(nodo.Hijos.get(2));
-
+                        // cuando se comparan numericos
                         if (((ret3.tipo.equals(Cadena.entero) || ret3.tipo.equals(Cadena.decimal))
                                 && (ret33.tipo.equals(Cadena.entero) || ret33.tipo.equals(Cadena.decimal)))) {
-                            Double num1 = Double.parseDouble(ret3.valor.toString());
-                            Double num2 = Double.parseDouble(ret33.valor.toString());
+                            //<editor-fold>
                             switch (nodo.Hijos.get(1).Token.getValor().toString()) {
-                                case "==":
-                                    if (num1 == num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case "!=":
-                                    if (num1 != num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case ">":
-                                    if (num1 > num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case "<":
-                                    if (num1 < num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case ">=":
-                                    if (num1 >= num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case "<=":
-                                    if (num1 <= num2) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
+                                case "==": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqz + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<>": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqs + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case ">": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Gt + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Lt + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case ">=": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Gte + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<=": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Lte + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+
                             }
+                            //</editor-fold>
                         } //aca se comparan 2 cadenas
                         else if (ret3.tipo.equals(Cadena.cadena) && ret33.tipo.equals(Cadena.cadena)) {
+                            //<editor-fold>
                             switch (nodo.Hijos.get(1).Token.getValor().toString()) {
-                                case "==":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
-                                case "!=":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
-
-                                case ">":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
-                                case "<":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
-
-                                case ">=":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
-
-                                case "<=":
-
-                                    return new retorno("falso", Cadena.booleano, line3, column3);
+                                case "==": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Eqz + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<>": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Eqs + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case ">": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Gt + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Lt + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case ">=": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Gte + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<=": {
+                                    String cod_dasm = Generador.llamada_ascii_cad(cima.tamanio+"",ret3.cod_generado);                                    
+                                    cod_dasm += Generador.llamada_ascii_cad(cima.tamanio+"",ret33.cod_generado); 
+                                    cod_dasm += Cadena.Lte + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
                             }
-                        } else if ((ret3.tipo.equals(Cadena.caracter) && ret33.tipo.equals(Cadena.caract))
-                                || (ret3.tipo.equals(Cadena.booleano) && ret33.tipo.equals(Cadena.booleano))) {
+                            //</editor-fold>
+                        //se comparan valores del mismo tipo    
+                        } else if ((ret3.tipo.equals(Cadena.caracter) && ret33.tipo.equals(Cadena.caracter))
+                                || (ret3.tipo.equals(Cadena.booleano) && ret33.tipo.equals(Cadena.booleano))
+                                || (Estructuras.existeEstructura(ret3.tipo) && Estructuras.existeEstructura(ret33.tipo)) 
+                                ) {
+                            //<editor-fold>
                             switch (nodo.Hijos.get(1).Token.getValor().toString()) {
-                                case "==":
-                                    if (ret3.valor.toString().equals(ret33.valor.toString())) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-                                case "!=":
-                                    if (!ret3.valor.toString().equals(ret33.valor.toString())) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    } else {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
+                                case "==": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqz + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<>": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqs + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
                                 default:
                                     String error = "ERROR SEMANTICO: Operador invalido para comparar datos del mismo tipo -> " + nodo.Hijos.get(1).Token.getValor().toString() + " L: " + line3 + " C: " + column3 + " Archivo: " + archivoActual;
                                     InterfazD.listaErrores.add(error);
@@ -247,45 +357,32 @@ public class Traductor extends Thread{
                                     return new retorno("error", Cadena.error, line3, column3);
                                 // error
                                 }
+                            //</editor-fold>
+                        //comparacion con nulo    
                         } else if (ret3.tipo.equals(Cadena.nulo) || ret33.tipo.equals(Cadena.nulo)
                                 && (!ret3.tipo.equals(Cadena.error) && !ret33.tipo.equals(Cadena.error))) {
+                            //<editor-fold>
                             switch (nodo.Hijos.get(1).Token.getValor().toString()) {
-                                case "==":
-                                    if (ret3.tipo.equals(Cadena.nulo) && ret33.tipo.equals(Cadena.nulo)) {
-                                        return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                    }
-
-                                    if (ret3.tipo.equals(Cadena.nulo)) {
-                                        if (ret33.valor.toString().equals(Cadena.nulo)) {
-                                            return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                        } else {
-                                            return new retorno("falso", Cadena.booleano, line3, column3);
-                                        }
-                                    } else {
-                                        if (ret3.valor.toString().equals(Cadena.nulo)) {
-                                            return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                        } else {
-                                            return new retorno("falso", Cadena.booleano, line3, column3);
-                                        }
-                                    }
-                                case "!=":
-                                    if (ret3.tipo.equals(Cadena.nulo) && ret33.tipo.equals(Cadena.nulo)) {
-                                        return new retorno("falso", Cadena.booleano, line3, column3);
-                                    }
-
-                                    if (ret3.tipo.equals(Cadena.nulo)) {
-                                        if (!ret33.valor.toString().equals(Cadena.nulo)) {
-                                            return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                        } else {
-                                            return new retorno("falso", Cadena.booleano, line3, column3);
-                                        }
-                                    } else {
-                                        if (!ret3.valor.toString().equals(Cadena.nulo)) {
-                                            return new retorno("verdadero", Cadena.booleano, line3, column3);
-                                        } else {
-                                            return new retorno("falso", Cadena.booleano, line3, column3);
-                                        }
-                                    }
+                                case "==": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqz + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
+                                case "<>": {
+                                    String cod_dasm = ret3.cod_generado;
+                                    cod_dasm += ret33.cod_generado;
+                                    cod_dasm += Cadena.Eqs + "\n";
+                                    ret3.cod_generado = cod_dasm;
+                                    ret3.Linea = line3;
+                                    ret3.Columna = column3;
+                                    ret3.tipo = Cadena.booleano;
+                                    return ret3;
+                                }
                                 default:
                                     String error = "ERROR SEMANTICO: Operador invalido para comparar datos con NULO -> " + nodo.Hijos.get(1).Token.getValor().toString() + " L: " + line3 + " C: " + column3 + " Archivo: " + archivoActual;
                                     InterfazD.listaErrores.add(error);
@@ -299,6 +396,7 @@ public class Traductor extends Thread{
                             System.out.println(error);
                             return new retorno("error", Cadena.error, line3, column3);
                         }
+                        //</editor-fold>
                         break;
                     case 1:
                         return comprobarExp(nodo.Hijos.get(0));
@@ -363,7 +461,7 @@ public class Traductor extends Thread{
                                                 }
                                                 case Cadena.cadena: {
                                                     //aca convertir el numero a cadena
-                                                    String cod_num = Generador.llamada_num_a_cad(cima.tamanio + "", ret4.cod_generado);
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", cod_num, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
@@ -418,7 +516,7 @@ public class Traductor extends Thread{
                                                     return ret4;
                                                 }
                                                 case Cadena.cadena: {
-                                                    String cod_num = Generador.llamada_num_a_cad(cima.tamanio + "", ret4.cod_generado);
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", cod_num, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
@@ -432,52 +530,52 @@ public class Traductor extends Thread{
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                            //</editor-fold>
+                                        //</editor-fold>
                                         case Cadena.booleano:
                                             //<editor-fold>
                                             switch (ret44.tipo) {
-                                                case Cadena.entero:{
+                                                case Cadena.entero: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.entero;
+                                                    ret4.tipo = Cadena.entero;
                                                     return ret4;
                                                 }
-                                                case Cadena.decimal:{
+                                                case Cadena.decimal: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.decimal;
+                                                    ret4.tipo = Cadena.decimal;
                                                     return ret4;
                                                 }
-                                                case Cadena.booleano:{
+                                                case Cadena.booleano: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.entero;
+                                                    ret4.tipo = Cadena.entero;
                                                     return ret4;
                                                 }
-                                                case Cadena.caracter:{
+                                                case Cadena.caracter: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.entero;
+                                                    ret4.tipo = Cadena.entero;
                                                     return ret4;
                                                 }
-                                                case Cadena.cadena:{
-                                                    String cod_num = Generador.llamada_num_a_cad(cima.tamanio + "", ret4.cod_generado);
+                                                case Cadena.cadena: {
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", cod_num, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
@@ -491,53 +589,53 @@ public class Traductor extends Thread{
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                            //</editor-fold>
+                                        //</editor-fold>
                                         case Cadena.caracter:
                                             //<editor-fold>
                                             switch (ret44.tipo) {
-                                                case Cadena.entero:{
+                                                case Cadena.entero: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.entero;
+                                                    ret4.tipo = Cadena.entero;
                                                     return ret4;
                                                 }
-                                                case Cadena.decimal:{
+                                                case Cadena.decimal: {
                                                     String cod_dasm = ret4.cod_generado;
                                                     cod_dasm += ret44.cod_generado;
                                                     cod_dasm += Cadena.Add + "\n";
                                                     ret4.cod_generado = cod_dasm;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.decimal;
-                                                    return ret4; 
-                                                }
-                                                case Cadena.booleano:{
-                                                    String cod_dasm = ret4.cod_generado;
-                                                    cod_dasm += ret44.cod_generado;
-                                                    cod_dasm += Cadena.Add + "\n";
-                                                    ret4.cod_generado = cod_dasm;
-                                                    ret4.Linea = line4;
-                                                    ret4.Columna = column4;
-                                                    ret4.tipo=Cadena.entero;
+                                                    ret4.tipo = Cadena.decimal;
                                                     return ret4;
                                                 }
-                                                case Cadena.caracter:{
-                                                    String car1 = Generador.llamada_car_a_cad(cima.tamanio+"", ret4.cod_generado);
-                                                    String car2 = Generador.llamada_car_a_cad(cima.tamanio+"", ret44.cod_generado);
-                                                    String concat=Generador.llamada_concat(cima.tamanio+"", car1, car2);
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Add + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String car1 = Generador.llamada_car_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);//sumo el tamano de concat
+                                                    String car2 = Generador.llamada_car_a_cad((cima.tamanio + 3), ret44.cod_generado);
+                                                    String concat = Generador.llamada_concat(cima.tamanio + "", car1, car2);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
                                                     ret4.tipo = Cadena.cadena;
                                                     return ret4;
                                                 }
-                                                case Cadena.cadena:{
-                                                    String car1 = Generador.llamada_car_a_cad(cima.tamanio+"", ret4.cod_generado);
-                                                    String concat=Generador.llamada_concat(cima.tamanio+"", car1, ret44.cod_generado);
+                                                case Cadena.cadena: {
+                                                    String car1 = Generador.llamada_car_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);
+                                                    String concat = Generador.llamada_concat(cima.tamanio + "", car1, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
@@ -550,44 +648,44 @@ public class Traductor extends Thread{
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                            //</editor-fold>
+                                        //</editor-fold>
                                         case Cadena.cadena:
                                             //<editor-fold>
                                             switch (ret44.tipo) {
-                                                case Cadena.entero:{
-                                                    String cod_num= Generador.llamada_num_a_cad(cima.tamanio + "", ret44.cod_generado);
+                                                case Cadena.entero: {
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret44.cod_generado); //estoy sumando el ambto de concat
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, cod_num);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
                                                     return ret4;
                                                 }
-                                                case Cadena.decimal:{
-                                                    String cod_num= Generador.llamada_num_a_cad(cima.tamanio + "", ret44.cod_generado);
+                                                case Cadena.decimal: {
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret44.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, cod_num);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
                                                     return ret4;
                                                 }
-                                                case Cadena.booleano:{
-                                                    String cod_num= Generador.llamada_num_a_cad(cima.tamanio + "", ret44.cod_generado);
+                                                case Cadena.booleano: {
+                                                    String cod_num = Generador.llamada_num_a_cad((cima.tamanio + 3) + "", ret44.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, cod_num);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
                                                     return ret4;
                                                 }
-                                                case Cadena.caracter:{
-                                                    String car= Generador.llamada_car_a_cad(cima.tamanio + "", ret44.cod_generado);
-                                                    String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado,car);
+                                                case Cadena.caracter: {
+                                                    String car = Generador.llamada_car_a_cad((cima.tamanio + 5) + "", ret44.cod_generado);
+                                                    String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, car);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
                                                     return ret4;
                                                 }
-                                                case Cadena.cadena:{
-                                                    String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado,ret44.cod_generado);
+                                                case Cadena.cadena: {
+                                                    String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
@@ -599,7 +697,7 @@ public class Traductor extends Thread{
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                            //</editor-fold>
+                                        //</editor-fold>
                                         default:
                                             String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '+' " + ret4.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
@@ -612,74 +710,199 @@ public class Traductor extends Thread{
                                     // <editor-fold defaultstate="collapsed">
                                     switch (ret4.tipo) {
                                         case Cadena.entero:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
 
-                                                case Cadena.decimal:
-
-                                                case Cadena.booleano:
-
-                                                case Cadena.caracter:
-
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        // si llego aca fue una operacion valida   
+                                        //</editor-fold>
                                         case Cadena.decimal:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.booleano:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.caracter:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Diff + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        case Cadena.cadena:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-                                                case Cadena.cadena:
-
-                                                default:
-                                                    String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
-                                                    InterfazD.listaErrores.add(error);
-                                                    System.out.println(error);
-                                                    return new retorno("error", Cadena.error, line4, column4);
-                                            }
+                                        //</editor-fold>                                        
                                         default:
                                             String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '-' " + ret4.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
@@ -692,74 +915,198 @@ public class Traductor extends Thread{
                                     // <editor-fold defaultstate="collapsed">
                                     switch (ret4.tipo) {
                                         case Cadena.entero:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-
-                                                case Cadena.decimal:
-
-                                                case Cadena.booleano:
-
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        // si llego aca fue una operacion valida   
+                                        //</editor-fold>
                                         case Cadena.decimal:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.booleano:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.caracter:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Mult + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        case Cadena.cadena:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-                                                case Cadena.cadena:
-
-                                                default:
-                                                    String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
-                                                    InterfazD.listaErrores.add(error);
-                                                    System.out.println(error);
-                                                    return new retorno("error", Cadena.error, line4, column4);
-                                            }
+                                        //</editor-fold>
                                         default:
                                             String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '*' " + ret4.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
@@ -772,74 +1119,201 @@ public class Traductor extends Thread{
                                     // <editor-fold defaultstate="collapsed">
                                     switch (ret4.tipo) {
                                         case Cadena.entero:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-
-                                                case Cadena.decimal:
-
-                                                case Cadena.booleano:
-
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        // si llego aca fue una operacion valida   
+                                        // </editor-fold>   
                                         case Cadena.decimal:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.booleano:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.caracter:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
+                                                case Cadena.caracter: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Div + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        case Cadena.cadena:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-                                                case Cadena.cadena:
-
-                                                default:
-                                                    String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
-                                                    InterfazD.listaErrores.add(error);
-                                                    System.out.println(error);
-                                                    return new retorno("error", Cadena.error, line4, column4);
-                                            }
+                                        //</editor-fold>
                                         default:
                                             String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '/' " + ret4.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
@@ -853,74 +1327,137 @@ public class Traductor extends Thread{
                                     //validamos que sean entero con entero
                                     switch (ret4.tipo) {
                                         case Cadena.entero:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
 
-                                                case Cadena.decimal:
-
-                                                case Cadena.booleano:
-
-                                                case Cadena.caracter:
-
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        // si llego aca fue una operacion valida   
+                                        //</editor-fold>
                                         case Cadena.decimal:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
+                                                case Cadena.booleano: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    return ret4;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.booleano:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
+                                        //</editor-fold>
                                         case Cadena.caracter:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-
+                                            //<editor-fold>
+                                            switch (ret44.tipo) {
+                                                case Cadena.entero: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.entero;
+                                                }
+                                                case Cadena.decimal: {
+                                                    String cod_dasm = ret4.cod_generado;
+                                                    cod_dasm += ret44.cod_generado;
+                                                    cod_dasm += Cadena.Call_pot + "\n";
+                                                    ret4.cod_generado = cod_dasm;
+                                                    ret4.Linea = line4;
+                                                    ret4.Columna = column4;
+                                                    ret4.tipo = Cadena.decimal;
+                                                }
                                                 default:
                                                     String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                                     InterfazD.listaErrores.add(error);
                                                     System.out.println(error);
                                                     return new retorno("error", Cadena.error, line4, column4);
                                             }
-                                        case Cadena.cadena:
-                                            switch (ret4.tipo) {
-                                                case Cadena.entero:
-                                                case Cadena.decimal:
-                                                case Cadena.booleano:
-                                                case Cadena.caracter:
-                                                case Cadena.cadena:
-
-                                                default:
-                                                    String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret44.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
-                                                    InterfazD.listaErrores.add(error);
-                                                    System.out.println(error);
-                                                    return new retorno("error", Cadena.error, line4, column4);
-                                            }
+                                        //</editor-fold>
                                         default:
                                             String error = "ERROR SEMANTICO: Tipo no valido en la operacion Aritmetica -> '^' " + ret4.tipo + " L: " + line4 + " C: " + column4 + " Archivo: " + archivoActual;
                                             InterfazD.listaErrores.add(error);
@@ -1344,7 +1881,7 @@ public class Traductor extends Thread{
                                             String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                             String cad2 = generarCodCad(sim2.nombre + "\n");
                                             //llamo a concat
-                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                            String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2); //sumamos el ambito de print
                                             codigo_dasm += "//------------------llamada a print ----------------\n";
                                             codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                             //llamo al funcion print
@@ -1423,7 +1960,7 @@ public class Traductor extends Thread{
                                                 String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                 String cad2 = generarCodCad(sim2.nombre + "\n");
                                                 //llamo a concat
-                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                 codigo_dasm += "//------------------llamada a print ----------------\n";
                                                 codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                 //llamo al funcion print
@@ -1509,7 +2046,7 @@ public class Traductor extends Thread{
                                 String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                 String cad2 = generarCodCad(sim.nombre + "\n");
                                 //llamo a concat
-                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                 codigo_dasm += "//------------------llamada a print ----------------\n";
                                 codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                 //llamo al funcion print
@@ -1566,7 +2103,7 @@ public class Traductor extends Thread{
                                     String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                     String cad2 = generarCodCad(sim.nombre + "\n");
                                     //llamo a concat
-                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                    String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                     codigo_dasm += "//------------------llamada a print ----------------\n";
                                     codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                     //llamo al funcion print
@@ -1643,7 +2180,7 @@ public class Traductor extends Thread{
                                         String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                         String cad2 = generarCodCad(sim.nombre + "\n");
                                         //llamo a concat
-                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                         codigo_dasm += "//------------------llamada a print ----------------\n";
                                         codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                         //llamo al funcion print
@@ -1717,7 +2254,7 @@ public class Traductor extends Thread{
                                             String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                             String cad2 = generarCodCad(sim.nombre + "\n");
                                             //llamo a concat
-                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                            String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                             codigo_dasm += "//------------------llamada a print ----------------\n";
                                             codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                             //llamo al funcion print
@@ -1824,7 +2361,7 @@ public class Traductor extends Thread{
                                                     String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                     String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
                                                     //llamo a concat
-                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                    String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                     codigo_dasm += "//------------------llamada a print ----------------\n";
                                                     codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                     //llamo al funcion print
@@ -1931,7 +2468,7 @@ public class Traductor extends Thread{
                                                         String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                         String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
                                                         //llamo a concat
-                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                         codigo_dasm += "//------------------llamada a print ----------------\n";
                                                         codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                         //llamo al funcion print
@@ -2927,7 +3464,7 @@ public class Traductor extends Thread{
                                             String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                 String cad2 = generarCodCad(sim.nombre + "\n");
                                                 //llamo a concat
-                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                 Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                 Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                 //llamo al funcion print
@@ -3008,7 +3545,7 @@ public class Traductor extends Thread{
                                                     String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                         String cad2 = generarCodCad(sim.nombre + "\n");
                                                         //llamo a concat
-                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                         Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                         Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                         //llamo al funcion print
@@ -3118,7 +3655,7 @@ public class Traductor extends Thread{
                                                                 String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                                     String cad2 = generarCodCad(sim.nombre+"|"+sim2.nombre + "\n");
                                                                     //llamo a concat
-                                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                                    String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                                     Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                                     Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                                     //llamo al funcion print
@@ -3223,7 +3760,7 @@ public class Traductor extends Thread{
                                                         String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                         String cad2 = generarCodCad(sim2.nombre + "\n");
                                                         //llamo a concat
-                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                         Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                         Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                         //llamo al funcion print
@@ -3342,7 +3879,7 @@ public class Traductor extends Thread{
                 codigo_generado += Codigo_dasm;
             }            
         }
-    }
+    } 
     
     private String capturarFunciones(Nodo nodo,int pos_ini){
         int pos=pos_ini;
@@ -3948,7 +4485,7 @@ public class Traductor extends Thread{
                                                         String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                         String cad2 = generarCodCad(sim2.nombre + "\n");
                                                         //llamo a concat
-                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                         Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                         Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                         //llamo al funcion print
@@ -4032,7 +4569,7 @@ public class Traductor extends Thread{
                                                             String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                             String cad2 = generarCodCad(sim2.nombre + "\n");
                                                             //llamo a concat
-                                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                            String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                             Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                             Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                             //llamo al funcion print
@@ -4167,7 +4704,7 @@ public class Traductor extends Thread{
                                             String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                             String cad2 = generarCodCad(sim.nombre + "\n");
                                             //llamo a concat
-                                            String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                            String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                             Codigo_dasm += "//------------------llamada a print ----------------\n";
                                             Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                             //llamo al funcion print
@@ -4229,7 +4766,7 @@ public class Traductor extends Thread{
                                                 String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                 String cad2 = generarCodCad(sim.nombre + "\n");
                                                 //llamo a concat
-                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                 Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                 Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                 //llamo al funcion print
@@ -4311,7 +4848,7 @@ public class Traductor extends Thread{
                                                     String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                     String cad2 = generarCodCad(sim.nombre + "\n");
                                                     //llamo a concat
-                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                    String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                     Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                     Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                     //llamo al funcion print
@@ -4389,7 +4926,7 @@ public class Traductor extends Thread{
                                                         String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                         String cad2 = generarCodCad(sim.nombre + "\n");
                                                         //llamo a concat
-                                                        String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                        String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                         Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                         Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                         //llamo al funcion print
@@ -4500,7 +5037,7 @@ public class Traductor extends Thread{
                                                                 String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                                 String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
                                                                 //llamo a concat
-                                                                String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                                String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                                 Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                                 Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                                 //llamo al funcion print
@@ -4612,7 +5149,7 @@ public class Traductor extends Thread{
                                                                     String cad1 = Dasm.Cadena.ini_idex_bound + "\n";
                                                                     String cad2 = generarCodCad(sim.nombre + "|" + sim2.nombre + "\n");
                                                                     //llamo a concat
-                                                                    String expr = Generador.llamada_concat(cima.tamanio + "", cad1, cad2);
+                                                                    String expr = Generador.llamada_concat((cima.tamanio+2) + "", cad1, cad2);
                                                                     Codigo_dasm += "//------------------llamada a print ----------------\n";
                                                                     Codigo_dasm += Generador.llamada_print(cima.tamanio + "", expr, "-2");
                                                                     //llamo al funcion print
@@ -4738,7 +5275,9 @@ public class Traductor extends Thread{
                         String nombre = hijo.Hijos.get(0).Token.getValor().toString();
                         linea = hijo.Hijos.get(0).Token.getLinea();
                         String columna = hijo.Hijos.get(0).Token.getColumna();
-                        retorno ret= comprobarExp(hijo.Hijos.get(1));                        
+                        cima.tamanio=cima.tamanio+2;//para que las llamadas internas no afecten el ambito de print
+                        retorno ret= comprobarExp(hijo.Hijos.get(1)); 
+                        cima.tamanio=cima.tamanio-2;
                         if(!ret.tipo.equals(Cadena.error)){
                             Codigo_dasm += "//------------------llamada a print ----------------\n";
                             //-2 para cadena, -3 para enteros, -4 para decimales

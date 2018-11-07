@@ -8,49 +8,51 @@ package Dasm;
 /** CUP generated class containing symbol constants. */
 public class sym {
   /* terminals */
-  public static final int Or = 17;
-  public static final int End = 10;
-  public static final int oval = 40;
-  public static final int line = 41;
-  public static final int decim = 21;
-  public static final int string = 42;
-  public static final int set_global = 35;
-  public static final int F = 31;
-  public static final int Br = 24;
-  public static final int D = 30;
-  public static final int Lte = 14;
-  public static final int C = 29;
-  public static final int tee_global = 37;
-  public static final int tee_local = 36;
-  public static final int Br_if = 22;
+  public static final int Or = 19;
+  public static final int End = 11;
+  public static final int oval = 42;
+  public static final int line = 43;
+  public static final int decim = 23;
+  public static final int string = 44;
+  public static final int set_global = 37;
+  public static final int F = 33;
+  public static final int Br = 26;
+  public static final int D = 32;
+  public static final int Lte = 16;
+  public static final int Pot = 6;
+  public static final int C = 31;
+  public static final int tee_global = 39;
+  public static final int tee_local = 38;
+  public static final int Br_if = 24;
   public static final int Diff = 3;
-  public static final int quadrate = 39;
+  public static final int quadrate = 41;
   public static final int EOF = 0;
-  public static final int Br__if = 23;
-  public static final int Not = 18;
-  public static final int Function = 9;
-  public static final int And = 16;
+  public static final int Br__if = 25;
+  public static final int Not = 20;
+  public static final int Function = 10;
+  public static final int And = 18;
   public static final int error = 1;
-  public static final int MENOS = 28;
-  public static final int Gt = 13;
+  public static final int MENOS = 30;
+  public static final int Gt = 15;
   public static final int Div = 5;
-  public static final int Print = 25;
-  public static final int point = 38;
-  public static final int id = 19;
-  public static final int get_global = 34;
+  public static final int Print = 27;
+  public static final int point = 40;
+  public static final int id = 21;
+  public static final int get_global = 36;
   public static final int Mul = 4;
   public static final int Add = 2;
-  public static final int Mod = 6;
-  public static final int DPUNTOS = 27;
-  public static final int Eqz = 11;
-  public static final int Gte = 15;
-  public static final int get_local = 32;
-  public static final int Call = 7;
-  public static final int enter = 20;
-  public static final int DOLAR = 26;
-  public static final int set_local = 33;
-  public static final int Lt = 12;
-  public static final int Calc = 8;
+  public static final int Mod = 7;
+  public static final int DPUNTOS = 29;
+  public static final int Eqz = 12;
+  public static final int Gte = 17;
+  public static final int get_local = 34;
+  public static final int Call = 8;
+  public static final int enter = 22;
+  public static final int Eqs = 13;
+  public static final int DOLAR = 28;
+  public static final int set_local = 35;
+  public static final int Lt = 14;
+  public static final int Calc = 9;
   public static final String[] terminalNames = new String[] {
   "EOF",
   "error",
@@ -58,12 +60,14 @@ public class sym {
   "Diff",
   "Mul",
   "Div",
+  "Pot",
   "Mod",
   "Call",
   "Calc",
   "Function",
   "End",
   "Eqz",
+  "Eqs",
   "Lt",
   "Gt",
   "Lte",

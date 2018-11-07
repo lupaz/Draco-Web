@@ -226,6 +226,7 @@ public class Cadena {
             Mod = "Mod",
             
             Function = "Function ",
+            Call_pot = "Call_$potencia", 
             End = "End",
             Print = "Print",
             _C="%c",
@@ -242,6 +243,7 @@ public class Cadena {
                     
             
             Eqz = "Eqz",
+            Eqs = "Eqs",
             Lt = "Lt",
             Gt = "Gt",
             Lte = "Lte",
