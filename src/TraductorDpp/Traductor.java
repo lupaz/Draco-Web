@@ -1555,7 +1555,7 @@ public class Traductor extends Thread{
                                         //<editor-fold>
                                         retorno ret = new retorno("", sim.tipo, linea, columna);
                                         ret.tipoDato = sim.TipoObjeto;
-                                        ret.cod_generado = Generador.recuperar_val_var_local(sim.posicion, sim.profundidad + "");
+                                        ret.cod_generado = Generador.recuperar_val_var_local(sim.posicion,calcular_prof(nombre)+ "");
                                         return ret;
                                         //</editor-fold>
                                     } else { //puede que sea una var global                                            
@@ -1655,12 +1655,12 @@ public class Traductor extends Thread{
                         ret.tipoDato = sim.TipoObjeto;
                         if (tipo_op.equals("++")) {
                             //metodo que le aumente el valor en 1
-                            ret.cod_generado = Generador.aumentar_var_loc(sim.posicion, sim.profundidad + "");
+                            ret.cod_generado = Generador.aumentar_var_loc(sim.posicion, calcular_prof(nombre) + "");
                         } else {
                             //metodo que le aumente el valor en 1
-                            ret.cod_generado = Generador.disminuir_var_loc(sim.posicion, sim.profundidad + "");
+                            ret.cod_generado = Generador.disminuir_var_loc(sim.posicion, calcular_prof(nombre) + "");
                         }
-                        ret.cod_generado += Generador.recuperar_val_var_local(sim.posicion, sim.profundidad + "");
+                        ret.cod_generado += Generador.recuperar_val_var_local(sim.posicion, calcular_prof(nombre) + "");
                         return ret;
                     } else {
                         String error = "ERROR SEMANTICO: La variable a inc/dec debe ser de tipo numerico ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
@@ -1774,7 +1774,7 @@ public class Traductor extends Thread{
                             columna = nodo.Hijos.get(1).Token.getColumna();
                             Simbolo sim2 = est.getAtributo(nombre2);
                             if (sim2 != null) {
-                                codigo_dasm += Generador.recuperar_val_est_local(sim.posicion, sim2.posicion, sim.profundidad + "");
+                                codigo_dasm += Generador.recuperar_val_est_local(sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
                                 retorno ret = new retorno("", sim2.tipo, linea, columna);
                                 ret.tipoDato = sim2.TipoObjeto;
                                 ret.cod_generado = codigo_dasm;
@@ -1861,7 +1861,7 @@ public class Traductor extends Thread{
                                             String et_correcto = Generador.generar_etq();
                                             //codigo para comprobar los indices en ejecucion
                                             for (int i = 0; i < val_dims.size(); i++) {
-                                                codigo_dasm += Generador.comprobarIndice_est_local(sim.posicion, (i + 1) + "", sim2.posicion, sim.profundidad + "", val_dims.get(i).cod_generado, et_error);
+                                                codigo_dasm += Generador.comprobarIndice_est_local(sim.posicion, (i + 1) + "", sim2.posicion, calcular_prof(nombre) + "", val_dims.get(i).cod_generado, et_error);
                                             }
                                             // codigo para linealizar    
                                             for (int i = 0; i < val_dims.size(); i++) {
@@ -1869,11 +1869,11 @@ public class Traductor extends Thread{
                                                 if (i == 0) {
                                                     codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                 } else {
-                                                    codigo_dasm += Generador.linealizar_arreglo_est_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion, sim.profundidad + "");
+                                                    codigo_dasm += Generador.linealizar_arreglo_est_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
                                                 }
                                             }
                                             //fin del arreglo
-                                            codigo_dasm += Generador.recuperar_val_Arreglo_est_local(sim2.numDims + "", sim.posicion, sim2.posicion, sim.profundidad + "");
+                                            codigo_dasm += Generador.recuperar_val_Arreglo_est_local(sim2.numDims + "", sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
 
                                             codigo_dasm += Cadena.br + et_correcto + "\n";
                                             //ahora lo del error 
@@ -2027,7 +2027,7 @@ public class Traductor extends Thread{
                                 String et_correcto = Generador.generar_etq();
                                 //codigo para comprobar los indices en ejecucion
                                 for (int i = 0; i < val_dims.size(); i++) {
-                                    codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, sim.profundidad + "", val_dims.get(i).cod_generado, et_error);
+                                    codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, calcular_prof(nombre) + "", val_dims.get(i).cod_generado, et_error);
                                 }
                                 // codigo para linealizar    
                                 for (int i = 0; i < val_dims.size(); i++) {
@@ -2035,11 +2035,11 @@ public class Traductor extends Thread{
                                     if (i == 0) {
                                         codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                     } else {
-                                        codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim.profundidad + "");
+                                        codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, calcular_prof(nombre) + "");
                                     }
                                 }
                                 //fin del arreglo
-                                codigo_dasm += Generador.recuperar_val_Arreglo_local(sim.numDims + "", sim.posicion, sim.profundidad + "");
+                                codigo_dasm += Generador.recuperar_val_Arreglo_local(sim.numDims + "", sim.posicion, calcular_prof(nombre) + "");
                                 //ahora lo del error 
                                 codigo_dasm += Cadena.br + et_correcto + "\n";
                                 codigo_dasm += et_error + ":\n";
@@ -2161,7 +2161,7 @@ public class Traductor extends Thread{
                                         String et_correcto = Generador.generar_etq();
                                         //codigo para comprobar los indices en ejecucion
                                         for (int i = 0; i < val_dims.size(); i++) {
-                                            codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, sim.profundidad + "", val_dims.get(i).cod_generado, et_error);
+                                            codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, calcular_prof(nombre) + "", val_dims.get(i).cod_generado, et_error);
                                         }
                                         // codigo para linealizar    
                                         for (int i = 0; i < val_dims.size(); i++) {
@@ -2169,11 +2169,11 @@ public class Traductor extends Thread{
                                             if (i == 0) {
                                                 codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                             } else {
-                                                codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim.profundidad + "");
+                                                codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, calcular_prof(nombre) + "");
                                             }
                                         }
                                         //fin del arreglo
-                                        codigo_dasm += Generador.recuperar_val_est_Arreglo_local(sim.numDims + "", sim.posicion, sim2.posicion, sim.profundidad + "");
+                                        codigo_dasm += Generador.recuperar_val_est_Arreglo_local(sim.numDims + "", sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
                                         //ahora lo del error 
                                         codigo_dasm += Cadena.br + et_correcto + "\n";
                                         codigo_dasm += et_error + ":\n";
@@ -2328,7 +2328,7 @@ public class Traductor extends Thread{
                                                     String et_correcto = Generador.generar_etq();
                                                     //codigo para comprobar los indices en ejecucion
                                                     for (int i = 0; i < val_dims.size(); i++) {
-                                                        codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, sim.profundidad + "", val_dims.get(i).cod_generado, et_error);
+                                                        codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion, calcular_prof(nombre) + "", val_dims.get(i).cod_generado, et_error);
                                                     }
                                                     // codigo para linealizar    
                                                     for (int i = 0; i < val_dims.size(); i++) {
@@ -2336,11 +2336,11 @@ public class Traductor extends Thread{
                                                         if (i == 0) {
                                                             codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                         } else {
-                                                            codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim.profundidad + "");
+                                                            codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, calcular_prof(nombre) + "");
                                                         }
                                                     }
                                                     //fin del 1er arreglo
-                                                    codigo_dasm += Generador.recuperar_val_est_Arr_arr_local(sim.numDims + "", sim.posicion, sim2.posicion, sim.profundidad + "");
+                                                    codigo_dasm += Generador.recuperar_val_est_Arr_arr_local(sim.numDims + "", sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
 
                                                     //ahora hacemos el acceso del 2do arreglo                                                
                                                     for (int i = 0; i < val_dims2.size(); i++) {
@@ -2749,6 +2749,10 @@ public class Traductor extends Thread{
                     }
                     codigo_dasm+="//-------------------------Fun/Met Traducido---------------------------\n";
                     codigo_dasm+=Cadena.Function+"$"+fun.Nombre+"\n";
+                    //inicializamos el retorno
+                    codigo_dasm+=Cadena.get_local_0+"\n";
+                    codigo_dasm+="0\n";
+                    codigo_dasm+=Cadena.set_local_calc+"\n";
                     codigo_dasm+=capturarFunciones(fun.Cuerpo,fun.numPars()+1);//le sumo el el retorno por que siempre va
                     codigo_dasm+=cima.etq_fin+" :\n";
                     codigo_dasm+=Cadena.End+"\n";
@@ -2767,7 +2771,7 @@ public class Traductor extends Thread{
     private void capturarEstrcuts(Nodo nodo){
         for (Nodo Hijo : nodo.Hijos) {
             if(Hijo!=null){
-                switch (Hijo.Term.getNombre()) {
+                switch (Hijo.Term.getNombre()){
                     case Cadena.STRUCT: {
                         int pos = 0;
                         //Creamos la estrcutura
@@ -4368,7 +4372,7 @@ public class Traductor extends Thread{
                                         retorno ret = comprobarExp(hijo.Hijos.get(2));
                                         if (ret.tipo.equals(sim2.tipo)) {
                                             Codigo_dasm += Cadena.codigo_a_var_est_loc;
-                                            Codigo_dasm += Generador.recuperar_dir_est_local(sim.posicion, sim2.posicion,sim.profundidad+"");
+                                            Codigo_dasm += Generador.recuperar_dir_est_local(sim.posicion, sim2.posicion,calcular_prof(nombre)+"");
                                             Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
                                         } else {
                                             String error = "ERROR SEMANTICO: Incompatibilidad de tipos en la asignacion del atributo de estructura -> " + nombre2 + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
@@ -4466,18 +4470,18 @@ public class Traductor extends Thread{
                                                         Codigo_dasm += Cadena.codigo_a_arr_est_loc;
                                                         //codigo para comprobar los indices en ejecucion
                                                         for (int i = 0; i < val_dims.size(); i++) {
-                                                            Codigo_dasm += Generador.comprobarIndice_est_local((i + 1) + "", sim.posicion, sim2.posicion,sim.profundidad+"",val_dims.get(i).cod_generado, et_error);
+                                                            Codigo_dasm += Generador.comprobarIndice_est_local((i + 1) + "", sim.posicion, sim2.posicion,calcular_prof(nombre)+"",val_dims.get(i).cod_generado, et_error);
                                                         }
                                                         // codigo para linealizar    
                                                         for (int i = 0; i < val_dims.size(); i++) {
                                                             if (i == 0) {
                                                                 Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                             } else {
-                                                                Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion, sim.profundidad + "");
+                                                                Codigo_dasm += Generador.linealizar_arreglo_est_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion, sim2.posicion, calcular_prof(nombre) + "");
                                                             }
                                                         }
                                                         //fin del arreglo
-                                                        Codigo_dasm += Generador.recuperar_dir_Arreglo_est_local(sim2.numDims + "", sim.posicion, sim2.posicion,sim.profundidad + "");
+                                                        Codigo_dasm += Generador.recuperar_dir_Arreglo_est_local(sim2.numDims + "", sim.posicion, sim2.posicion,calcular_prof(nombre) + "");
                                                         Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
                                                         //ahora lo del error 
                                                         Codigo_dasm += Cadena.br + et_correcto + "\n";
@@ -4632,7 +4636,7 @@ public class Traductor extends Thread{
                             retorno ret = comprobarExp(hijo.Hijos.get(1));
                             if (sim.tipo.equals(ret.tipo)) {
                                 Codigo_dasm += Cadena.codigo_a_var_loc;
-                                Codigo_dasm += Generador.recuperar_dir_var_local(sim.posicion, sim.profundidad+"");
+                                Codigo_dasm += Generador.recuperar_dir_var_local(sim.posicion, calcular_prof(nombre)+"");
                                 Codigo_dasm += Generador.asignar_var_glob_loc_stack(ret.cod_generado);
                             } else {
                                 String error = "ERROR SEMANTICO:Imcompatibilidad de tipos al asignar la varaible ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
@@ -4685,18 +4689,18 @@ public class Traductor extends Thread{
                                             Codigo_dasm += Cadena.codigo_a_arr_loc;
                                             //codigo para comprobar los indices en ejecucion
                                             for (int i = 0; i < val_dims.size(); i++) {
-                                                Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,sim.profundidad+"",val_dims.get(i).cod_generado, et_error);
+                                                Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,calcular_prof(nombre)+"",val_dims.get(i).cod_generado, et_error);
                                             }
                                             // codigo para linealizar    
                                             for (int i = 0; i < val_dims.size(); i++) {
                                                 if (i == 0) {
                                                     Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                 } else {
-                                                    Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,sim.profundidad+"");
+                                                    Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,calcular_prof(nombre)+"");
                                                 }
                                             }
                                             //fin del arreglo
-                                            Codigo_dasm += Generador.recuperar_dir_Arreglo_local(sim.numDims + "", sim.posicion,sim.profundidad+"");
+                                            Codigo_dasm += Generador.recuperar_dir_Arreglo_local(sim.numDims + "", sim.posicion,calcular_prof(nombre)+"");
                                             Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
                                             //ahora lo del error 
                                             Codigo_dasm += Cadena.br + et_correcto + "\n";
@@ -4829,18 +4833,18 @@ public class Traductor extends Thread{
                                                     Codigo_dasm += Cadena.codigo_a_var_arr_loc;
                                                     //codigo para comprobar los indices en ejecucion
                                                     for (int i = 0; i < val_dims.size(); i++) {
-                                                        Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,sim.profundidad+"",val_dims.get(i).cod_generado, et_error);
+                                                        Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,calcular_prof(nombre)+"",val_dims.get(i).cod_generado, et_error);
                                                     }
                                                     // codigo para linealizar    
                                                     for (int i = 0; i < val_dims.size(); i++) {
                                                         if (i == 0) {
                                                             Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                         } else {
-                                                            Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,sim.profundidad+"");
+                                                            Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,calcular_prof(nombre)+"");
                                                         }
                                                     }
                                                     //fin del arreglo
-                                                    Codigo_dasm += Generador.recuperar_dir_est_Arreglo_local(sim.numDims + "", sim.posicion,sim2.posicion,sim.profundidad+"");
+                                                    Codigo_dasm += Generador.recuperar_dir_est_Arreglo_local(sim.numDims + "", sim.posicion,sim2.posicion,calcular_prof(nombre)+"");
                                                     Codigo_dasm += Generador.asignar_var_glob_loc_heap(ret.cod_generado);
                                                     //ahora lo del error 
                                                     Codigo_dasm += Cadena.br + et_correcto + "\n";
@@ -5004,18 +5008,18 @@ public class Traductor extends Thread{
                                                                 Codigo_dasm += Cadena.codigo_a_arr_arr_loc;
                                                                 //codigo para comprobar los indices en ejecucion
                                                                 for (int i = 0; i < val_dims.size(); i++) {
-                                                                    Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,sim.profundidad+"",val_dims.get(i).cod_generado, et_error);
+                                                                    Codigo_dasm += Generador.comprobarIndice_local((i + 1) + "", sim.posicion,calcular_prof(nombre)+"",val_dims.get(i).cod_generado, et_error);
                                                                 }
                                                                 // codigo para linealizar    
                                                                 for (int i = 0; i < val_dims.size(); i++) {
                                                                     if (i == 0) {
                                                                         Codigo_dasm += Generador.linealizar_arreglo_1dim(val_dims.get(i).cod_generado);
                                                                     } else {
-                                                                        Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,sim.profundidad+"");
+                                                                        Codigo_dasm += Generador.linealizar_arreglo_Ndim_local(val_dims.get(i).cod_generado, (i + 1) + "", sim.posicion,calcular_prof(nombre)+"");
                                                                     }
                                                                 }
                                                                 //fin del arreglo
-                                                                Codigo_dasm += Generador.recuperar_val_est_Arr_arr_local(sim.numDims + "", sim.posicion, sim2.posicion,sim.profundidad+"");
+                                                                Codigo_dasm += Generador.recuperar_val_est_Arr_arr_local(sim.numDims + "", sim.posicion, sim2.posicion,calcular_prof(nombre)+"");
 
                                                                 //ahora hacemos el acceso del 2do arreglo                                                
                                                                 for (int i = 0; i < val_dims2.size(); i++) {
@@ -5253,7 +5257,7 @@ public class Traductor extends Thread{
                             Simbolo sim=existeVariable2("retorno");
                             //posicion de la variable
                             Codigo_dasm+=Cadena.get_local_0+"\n";
-                            Codigo_dasm+=sim.profundidad+"\n";
+                            Codigo_dasm+=calcular_prof(nombre)+"\n";
                             Codigo_dasm+=Cadena.Diff+"\n";
                             //asignamos el valor de retorno    
                             Codigo_dasm+=ret.cod_generado;
@@ -5366,10 +5370,10 @@ public class Traductor extends Thread{
                             if (sim.tipo.equals(Cadena.entero) || sim.tipo.equals(Cadena.decimal)) {
                                 if (tipo_op.equals("++")) {
                                     //metodo que le aumente el valor en 1
-                                    Codigo_dasm += Generador.aumentar_var_loc(sim.posicion, sim.profundidad + "");
+                                    Codigo_dasm += Generador.aumentar_var_loc(sim.posicion, calcular_prof(nombre) + "");
                                 } else {
                                     //metodo que le aumente el valor en 1
-                                    Codigo_dasm+= Generador.disminuir_var_loc(sim.posicion, sim.profundidad + "");
+                                    Codigo_dasm+= Generador.disminuir_var_loc(sim.posicion, calcular_prof(nombre) + "");
                                 }
                             } else {
                                 String error = "ERROR SEMANTICO: La variable a inc/dec debe ser de tipo numerico ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
@@ -5407,28 +5411,395 @@ public class Traductor extends Thread{
 //=================================== Sentencia SI ====================================                 
                     case Cadena.SI:{
                         // <editor-fold defaultstate="collapsed">
-                        
+                        linea = hijo.Hijos.get(0).Token.getLinea();
+                        String columna = hijo.Hijos.get(0).Token.getColumna();
+                        retorno r3 = comprobarExp(hijo.Hijos.get(1));                        
+                        String et_salida=Generador.generar_etq();
+                        String cod_das="";
+                        int tam_ambito_act = cima.tamanio;
+                        if (r3.tipo.equals(Cadena.booleano)) {//se comprueba que sea un booleano
+                            //Parte del primer if
+                            //<editor-fold>
+                            TablaSimbolos tab = new TablaSimbolos(cima.Nivel, Cadena.ambito_if, cima.retorno, cima.detener, cima.continuar);
+                            pilaSimbols.push(tab);                            
+                            cima = tab;
+                            tab.etq_fin=Generador.generar_etq();
+                            int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
+                            //asignamos su tamaño
+                            cima.tamanio = tamano;
+                            cod_das += "//-------------------------Sentencia Si---------------------------\n";
+                            cod_das += r3.cod_generado;
+                            cod_das += Cadena.br_if+cima.etq_fin+"\n";
+                            //cambio de ambito
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += tam_ambito_act+"\n";
+                            cod_das += Cadena.Add+"\n";
+                            cod_das += Cadena.set_local_0+"\n";
+                            cod_das += capturarFunciones(hijo.Hijos.get(2),0);
+                            //regresamos al ambito anterior
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += tam_ambito_act+"\n";
+                            cod_das += Cadena.Diff+"\n";
+                            cod_das += Cadena.set_local_0 + "\n";
+                            //etiqueta de salida
+                            cod_das += Cadena.br+et_salida+"\n";
+                            //etiqueta de la condicion no se cumplio
+                            cod_das += cima.etq_fin + " :\n";                                                    
+                            pilaSimbols.pop();
+                            cima = pilaSimbols.peek();
+                            //</editor-fold>
+                            //aca traducimos los if-else o else, si los trae                            
+                            for (Nodo sub_hijo : hijo.Hijos.get(3).Hijos) {                                
+                                if (sub_hijo.Hijos.size() > 2) {//es un SINO SI
+                                    //<editor-fold>
+                                    linea = sub_hijo.Hijos.get(0).Token.getLinea();
+                                    String column = sub_hijo.Hijos.get(0).Token.getLinea();                                   
+                                    retorno ret = comprobarExp(sub_hijo.Hijos.get(1));
+                                    if (ret.tipo.equals(Cadena.booleano)) {
+                                        TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_if_else, cima.retorno, cima.detener, cima.continuar);
+                                        pilaSimbols.push(tab1);
+                                        cima = tab1;
+                                        tab1.etq_fin=Generador.generar_etq();
+                                        tamano = calcularTamano(sub_hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
+                                        //asignamos su tamaño
+                                        cima.tamanio = tamano;
+                                        cod_das += "//-------------------------Sentencia Sino Si---------------------------\n";
+                                        cod_das += ret.cod_generado;
+                                        cod_das += Cadena.br_if + cima.etq_fin + "\n";
+                                        //cambio de ambito
+                                        cod_das += Cadena.get_local_0 + "\n";
+                                        cod_das += tam_ambito_act + "\n";
+                                        cod_das += Cadena.Add + "\n";
+                                        cod_das += Cadena.set_local_0 + "\n";
+                                        cod_das += capturarFunciones(sub_hijo.Hijos.get(2), 0);//le sumo el el retorno por que siempre va
+                                        //regresamos al ambito anterior
+                                        cod_das += Cadena.get_local_0 + "\n";
+                                        cod_das += tam_ambito_act + "\n";
+                                        cod_das += Cadena.Diff + "\n";
+                                        cod_das += Cadena.set_local_0 + "\n";
+                                        //etiqueta de salida
+                                        cod_das += Cadena.br + et_salida + "\n";
+                                        //etiqueta de la condicion no se cumplio
+                                        cod_das += cima.etq_fin + " :\n"; 
+                                        pilaSimbols.pop();
+                                        cima = pilaSimbols.peek();                                                                              
+                                    } else {
+                                        String error = "ERROR SEMANTICO: Se debe evaluar una expresion booleana en la condicion del SINO SI -> " + " L: " + linea + " C: " + column + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                        break;
+                                    }
+                                    //</editor-fold>
+                                } else { //es un SINO 
+                                    //<editor-fold>
+                                    TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_else, cima.retorno, cima.detener, cima.continuar);
+                                    pilaSimbols.push(tab1);
+                                    cima = tab1;
+                                    tamano = calcularTamano(sub_hijo.Hijos.get(1));
+                                    cod_das += "//-------------------------  Sentencia Sino  ---------------------------\n";
+                                    //asignamos su tamaño
+                                    cima.tamanio = tamano;
+                                    //cambio de ambito
+                                    cod_das += Cadena.get_local_0 + "\n";
+                                    cod_das += tam_ambito_act + "\n";
+                                    cod_das += Cadena.Add + "\n";
+                                    cod_das += Cadena.set_local_0 + "\n";
+                                    cod_das += capturarFunciones(sub_hijo.Hijos.get(1),0);//le sumo el el retorno por que siempre va
+                                    //regresamos al ambito anterior
+                                    cod_das += Cadena.get_local_0 + "\n";
+                                    cod_das += tam_ambito_act + "\n";
+                                    cod_das += Cadena.Diff + "\n";
+                                    cod_das += Cadena.set_local_0 + "\n";
+                                    pilaSimbols.pop();
+                                    cima = pilaSimbols.peek();
+                                    //</editor-fold>
+                                }
+                            }                            
+                            cod_das+=et_salida+" :\n";
+                            Codigo_dasm+=cod_das;
+                        } else {
+                            //no retorno una expresion booleana
+                            String error = "ERROR SEMANTICO: Se debe evaluar una expresion booleana en la condicion del SI -> " + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                            InterfazD.listaErrores.add(error);
+                            System.out.println(error);
+                        }
                         // </editor-fold>
                         break;      
                     }  
 //=================================== Sentencia Mietras ====================================                 
-                    case Cadena.MIENTRAS:{
+                    case Cadena.MIENTRAS: {
                         // <editor-fold defaultstate="collapsed">
-
+                        linea = hijo.Hijos.get(0).Token.getLinea();
+                        String column7 = hijo.Hijos.get(0).Token.getColumna();
+                        retorno r7 = comprobarExp(hijo.Hijos.get(1));
+                        String cod_das="";
+                        int tam_ambito_act = cima.tamanio;
+                        if (r7.tipo.equals(Cadena.booleano)) {//aca todo va bien
+                            int numero_it = 0;
+                            //agregamos la nueva tabla de simbolos
+                            TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_while, cima.retorno, true, true);
+                            pilaSimbols.push(tab1);
+                            cima = tab1;
+                            //generamos sus respectivas etiquetas
+                            tab1.etq_ini=Generador.generar_etq();
+                            tab1.etq_fin=Generador.generar_etq();                            
+                            int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
+                            //asignamos su tamaño
+                            cima.tamanio = tamano;
+                            cod_das += "//-------------------------Sentencia Mientras---------------------------\n";
+                            cod_das += cima.etq_ini+" :\n";
+                            cod_das += r7.cod_generado;
+                            cod_das += Cadena.br_if+cima.etq_fin+"\n";
+                            //cambio de ambito
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += tam_ambito_act+"\n";
+                            cod_das += Cadena.Add+"\n";
+                            cod_das += Cadena.set_local_0+"\n";
+                            cod_das += capturarFunciones(hijo.Hijos.get(2),0);
+                            //regresamos al ambito anterior
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += tam_ambito_act+"\n";
+                            cod_das += Cadena.Diff+"\n";
+                            cod_das += Cadena.set_local_0 + "\n";
+                            //etiqueta de salida
+                            cod_das += Cadena.br+cima.etq_ini+"\n";
+                            cod_das+=cima.etq_fin+" :\n";                            
+                            //despues de evaluar las sentecnias sacamos la tabla 
+                            pilaSimbols.pop();
+                            cima = pilaSimbols.peek();
+                            //dejamos el codigo en la cadena general
+                            Codigo_dasm+=cod_das;
+                        } else {
+                            //no retorno una expresion booleana
+                            String error = "ERROR SEMANTICO: Se debe evaluar una expresion booleana en la condicion del MIENTRAS -> " + " L: " + linea + " C: " + column7 + " Archivo: " + archivoActual;
+                            InterfazD.listaErrores.add(error);
+                            System.out.println(error);
+                        }  
                         // </editor-fold>
                         break;
                     }
 //=================================== Sentencia PARA ====================================                 
                     case Cadena.PARA:{
                         // <editor-fold defaultstate="collapsed">
-
+                        linea = hijo.Hijos.get(0).Token.getLinea();
+                        String column10 = hijo.Hijos.get(0).Token.getLinea();
+                        int tam_ambito_act = cima.tamanio; 
+                        boolean declara = false;
+                        String cod_das="";
+                        if (hijo.Hijos.get(1).Hijos.size() < 3) { //aca es unicamente una asignacion
+                            //<editor-fold>
+                            String name = hijo.Hijos.get(1).Hijos.get(0).Token.getValor().toString();
+                            String line = hijo.Hijos.get(1).Hijos.get(0).Token.getLinea();
+                            String column = hijo.Hijos.get(1).Hijos.get(0).Token.getColumna();
+                            Simbolo sim = existeVariable2(name);
+                            if (sim != null) { //es una variable local
+                                //<editor-fold>
+                                retorno ret = comprobarExp(hijo.Hijos.get(1).Hijos.get(1));
+                                if (sim.tipo.equals(ret.tipo)) {
+                                    Codigo_dasm += Cadena.codigo_a_var_loc;
+                                    Codigo_dasm += Generador.recuperar_dir_var_local(sim.posicion, calcular_prof(name) + "");
+                                    Codigo_dasm += Generador.asignar_var_glob_loc_stack(ret.cod_generado);
+                                } else {
+                                    String error = "ERROR SEMANTICO:Imcompatibilidad de tipos al asignar la varaible ->  " + name + " L: " + line + " C: " + column + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                    break;
+                                }
+                                //</editor-fold>
+                            } else { //puede que sea una var global                                            
+                                sim = existeVariable3(name);
+                                if (sim != null) { //es una variable global
+                                    //<editor-fold>                                                     
+                                    retorno ret = comprobarExp(hijo.Hijos.get(1));
+                                    if (sim.tipo.equals(ret.tipo)) {
+                                        Codigo_dasm += Cadena.codigo_a_var_glo;
+                                        Codigo_dasm += Generador.recuperar_dir_var_global(sim.posicion);
+                                        Codigo_dasm += Generador.asignar_var_glob_loc_stack(ret.cod_generado);
+                                    } else {
+                                        String error = "ERROR SEMANTICO:Imcompatibilidad de tipos al asignar la varaible ->  " + name + " L: " + linea + " C: " + column + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                        break;
+                                    }
+                                    //</editor-fold>
+                                } else { //la varibale no existe
+                                    String error = "ERROR SEMANTICO: La variable a acceder no esta definida ->  " + name + " L: " + linea + " C: " + column + " Archivo: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                    break;
+                                }
+                            }
+                            //</editor-fold>
+                        } else{ //es una declaración y asignacion                            
+                            //<editor-fold>
+                            String tipo = hijo.Hijos.get(1).Hijos.get(0).Token.getValor().toString();
+                            String name = hijo.Hijos.get(1).Hijos.get(1).Token.getValor().toString();
+                            String line = hijo.Hijos.get(1).Hijos.get(1).Token.getLinea();
+                            String column = hijo.Hijos.get(1).Hijos.get(1).Token.getColumna();                            
+                            Simbolo sim = existeVariable2(name);
+                            if (sim == null) {
+                                retorno ret = comprobarExp(hijo.Hijos.get(1).Hijos.get(2).Hijos.get(0));
+                                if (ret.tipo.equals(tipo)) {
+                                    TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_for + "_tmp", cima.retorno, true, true);
+                                    pilaSimbols.push(tab1);
+                                    cima = tab1;
+                                    sim = new Simbolo(name, retornarTam(tipo), Cadena.var_primitiva, tipo,0+"", linea, column);
+                                    cima.insertar(name, sim);
+                                    cima.tamanio=1;
+                                    declara = true;
+                                    //<editor-fold desc="codigo dasm generado">
+                                    cod_das +="//-------------------------- var iteradora PARA ------------------------\n";
+                                    cod_das += Cadena.get_local_0+"\n";
+                                    cod_das += tam_ambito_act+"\n";
+                                    cod_das += Cadena.Add+"\n";
+                                    cod_das += Cadena.set_local_0+"\n";
+                                    cod_das += Generador.declara_asigna_var_local("0", ret.cod_generado);
+                                    //</editor-fold>
+                                } else {
+                                    String error = "ERROR SEMANTICO: Incompatibiidad de tipos en la Dec/asigacion del PARA -> " + name + " L: " + line + " C: " + column + " Clase: " + archivoActual;
+                                    InterfazD.listaErrores.add(error);
+                                    System.out.println(error);
+                                    break;
+                                }
+                            } else {
+                                String error = "ERROR SEMANTICO: La variable a definir en el PARA ya esta definida -> " + name + " L: " + line + " C: " + column + " Archivo: " + archivoActual;
+                                InterfazD.listaErrores.add(error);
+                                System.out.println(error);
+                                break;
+                            }
+                            //</editor-fold>
+                        }
+                        // si llego a este punto procedemos a ejecutar el cuerpo
+                        retorno r10 =comprobarExp(hijo.Hijos.get(2));
+                        //si se cumple prodecemos a crear el abito que dura este ciclo
+                        if (r10.tipo.equals(Cadena.booleano)) {//aca todo va bien
+                            int ambito_tmp=cima.tamanio;
+                            TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_for, cima.retorno, true, true);
+                            pilaSimbols.push(tab1);
+                            cima = tab1;
+                            //generamos sus respectivas etiquetas
+                            tab1.etq_ini=Generador.generar_etq();
+                            tab1.etq_fin=Generador.generar_etq();                            
+                            int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
+                            //asignamos su tamaño
+                            cima.tamanio = tamano;
+                            cod_das += "//-------------------------Sentencia Para---------------------------\n";
+                            cod_das += cima.etq_ini+" :\n";
+                            cod_das += r10.cod_generado;
+                            cod_das += Cadena.br_if+cima.etq_fin+"\n";
+                            //cambio de ambito
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += ambito_tmp+"\n";
+                            cod_das += Cadena.Add+"\n";
+                            cod_das += Cadena.set_local_0+"\n";
+                            cod_das += capturarFunciones(hijo.Hijos.get(4),0);
+                            //ejecutamos la operacion ++ o --
+                            // <editor-fold defaultstate="collapsed">
+                                String nombre = hijo.Hijos.get(3).Hijos.get(0).Token.getValor().toString();
+                                linea = hijo.Hijos.get(3).Hijos.get(0).Token.getLinea();
+                                String columna = hijo.Hijos.get(3).Hijos.get(0).Token.getColumna();
+                                String tipo_op = hijo.Hijos.get(3).Hijos.get(1).Token.getValor().toString();
+                                //validamos que exista la var
+                                Simbolo sim = existeVariable2(nombre);
+                                if (sim != null) { //es una variable local
+                                    //<editor-fold>
+                                    if (sim.tipo.equals(Cadena.entero) || sim.tipo.equals(Cadena.decimal)) {
+                                        if (tipo_op.equals("++")) {
+                                            //metodo que le aumente el valor en 1
+                                            cod_das += Generador.aumentar_var_loc(sim.posicion, calcular_prof(nombre) + "");
+                                        } else {
+                                            //metodo que le aumente el valor en 1
+                                            cod_das+= Generador.disminuir_var_loc(sim.posicion, calcular_prof(nombre) + "");
+                                        }
+                                    } else {
+                                        pilaSimbols.pop();
+                                        cima = pilaSimbols.peek();
+                                        if (declara) {
+                                            pilaSimbols.pop();
+                                            cima = pilaSimbols.peek();
+                                        }
+                                        String error = "ERROR SEMANTICO: La variable a inc/dec debe ser de tipo numerico ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                        break;
+                                    }
+                                    //</editor-fold>
+                                } else { //puede que sea una var global                                            
+                                    sim = existeVariable3(nombre);
+                                    if (sim != null) { //es una variable global
+                                        //<editor-fold>
+                                        if (sim.tipo.equals(Cadena.entero) || sim.tipo.equals(Cadena.decimal)) {                                    
+                                            if (tipo_op.equals("++")) {
+                                                //metodo que le aumente el valor en 1
+                                                cod_das += Generador.aumentar_var_glo(sim.posicion);
+                                            } else {
+                                                //metodo que le aumente el valor en 1
+                                                cod_das += Generador.disminuir_var_glo(sim.posicion);
+                                            }
+                                        } else {
+                                            pilaSimbols.pop();
+                                            cima = pilaSimbols.peek();
+                                            if (declara) {
+                                                pilaSimbols.pop();
+                                                cima = pilaSimbols.peek();
+                                            }
+                                            String error = "ERROR SEMANTICO: La variable a inc/dec debe ser de tipo numerico ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                            InterfazD.listaErrores.add(error);
+                                            System.out.println(error);
+                                            break;
+                                        }
+                                        //</editor-fold>
+                                    } else { //la varibale no existe
+                                        pilaSimbols.pop();
+                                        cima = pilaSimbols.peek();
+                                        if (declara) {
+                                            pilaSimbols.pop();
+                                            cima = pilaSimbols.peek();
+                                        }
+                                        String error = "ERROR SEMANTICO: La variable a inc/dec no esta definida ->  " + nombre + " L: " + linea + " C: " + columna + " Archivo: " + archivoActual;
+                                        InterfazD.listaErrores.add(error);
+                                        System.out.println(error);
+                                        break;
+                                    }
+                                }
+                            // </editor-fold>
+                            //regresamos al ambito anterior
+                            cod_das += Cadena.get_local_0+"\n";
+                            cod_das += ambito_tmp+"\n";
+                            cod_das += Cadena.Diff+"\n";
+                            cod_das += Cadena.set_local_0 + "\n";                            
+                            //etiqueta de regreso
+                            cod_das += Cadena.br+cima.etq_ini+"\n";
+                            cod_das+=cima.etq_fin+" :\n";                            
+                            //sacamos la tabla del ambito que ya termino
+                            pilaSimbols.pop();
+                            cima = pilaSimbols.peek();
+                            //ejecutamos el amunto o decremento segun sea el caso.
+                            if (declara) {
+                                cod_das += Cadena.get_local_0 + "\n";
+                                cod_das += tam_ambito_act + "\n";
+                                cod_das += Cadena.Diff + "\n";
+                                cod_das += Cadena.set_local_0 + "\n";
+                                pilaSimbols.pop();
+                                cima = pilaSimbols.peek();
+                            }
+                            Codigo_dasm+=cod_das;
+                        }else {//no retorno una expresion booleana
+                            if (declara) {                                
+                                pilaSimbols.pop();
+                                cima = pilaSimbols.peek();                                
+                            }
+                            String error = "ERROR SEMANTICO: Se debe evaluar una expresion booleana en la condicion del PARA -> " + " L: " + linea + " C: " + column10 + " Archivo: "+archivoActual ;
+                            InterfazD.listaErrores.add(error);
+                            System.out.println(error);
+                        }
                         // </editor-fold>
                         break;
                     }
 //=================================== Sentencia  ================================================                 
                     case Cadena.SELECT:{
                         // <editor-fold defaultstate="collapsed">
-
+                         
                         // </editor-fold>
                         break;
                     }                    
@@ -5492,14 +5863,30 @@ public class Traductor extends Thread{
     { //metodo para obtener el valor de las variables
         if(!cima.Nivel.equals("Global")){
             String nombre = cima.Nivel;
+            for (int j = pilaSimbols.size() - 1; j > -1; j--) {
+                if (pilaSimbols.get(j).Nivel.equals(nombre)) {
+                    if (pilaSimbols.get(j).existeSimbolo(id)) {
+                        Simbolo sim =pilaSimbols.get(j).retornaSimbolo(id);
+                        return sim;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    private int calcular_prof(String id) //declara/asigna local
+    { //metodo para obtener el valor de las variables
+        if(!cima.Nivel.equals("Global")){
+            String nombre = cima.Nivel;
             int profundidad=0;
             for (int j = pilaSimbols.size() - 1; j > -1; j--) {
                 if (pilaSimbols.get(j).Nivel.equals(nombre)) {
                     if (pilaSimbols.get(j).existeSimbolo(id)) {
                         Simbolo sim =pilaSimbols.get(j).retornaSimbolo(id);
                         if(j != pilaSimbols.size() - 1) // si la variable se encuntra fuera de la cima, sumo el tamanio de ambito
-                            sim.profundidad=profundidad+pilaSimbols.get(j).tamanio;                    
-                        return sim;
+                            profundidad=profundidad+pilaSimbols.get(j).tamanio;                    
+                        return profundidad;
                     }else{
                         if(j != pilaSimbols.size() - 1) //no resto el valor de la cima
                             profundidad+=pilaSimbols.get(j).tamanio;                    
@@ -5507,7 +5894,7 @@ public class Traductor extends Thread{
                 }
             }
         }
-        return null;
+        return 0;
     }
 
     private Simbolo existeVariable3(String id) //declara o asigna gloabal

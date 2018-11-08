@@ -128,6 +128,7 @@ public class Cadena {
     ambito_g =      "Ambito_global",
     ambito_fun=     "Ambito_funcion",
     ambito_if =     "Ambito_if",
+    ambito_if_else = "Ambito_if_else",
     ambito_for =    "Ambito_for",
     ambito_while =  "Ambito_while",
     ambito_select = "Ambito_select",
