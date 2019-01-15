@@ -5,7 +5,6 @@
  */
 package draco_web;
 
-import AST.DibujarAST;
 import AST.Nodo;
 import Dibujo.Dibujo;
 import Dplusplus.Par_Dplus;
@@ -15,8 +14,7 @@ import java.awt.GraphicsConfiguration;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.StringReader;
-import static java.lang.System.gc;
-import java.util.ArrayList;
+
 import javax.swing.JFrame;
 
 /**
@@ -37,7 +35,7 @@ public class DRACO_WEB {
         //System.out.println("aads"+cad);
         
         
-        JFrame frame = new JFrame(gc);
+        /*JFrame frame = new JFrame(gc);
         frame.setTitle("Welcome to the jungle XD");
         frame.setSize(600, 600);
         frame.setLocation(200, 200);
@@ -68,6 +66,21 @@ public class DRACO_WEB {
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
+        
+        Double dou = Double.parseDouble("5");
+        
+        System.out.println( dou);*/
+        
+        System.out.println("Dies = "+( Math.pow(10.0,4.0)* 10.2 + ( 50.55+10.82)));
+        
+        System.out.println("Veinte = "+(40.2%10 + (50.0/22.0)+25.5));
+        
+        System.out.println("Treinta = "+(1.11 - 1.11 - 10.5 + 20.5+(40.55-20.2)));
+        
+        System.out.println("Cuarenta = "+(10.0/2.0 + 40.0 + 25.0/2.0 + (40%6)));
+        
+        System.out.println("ERROR = "+(10000.00+(0%10)+0+0+(0/1)+(0*1)));
+        
     }
     
     public static Nodo leer_Dplus(String ruta){
@@ -84,7 +97,6 @@ public class DRACO_WEB {
             return  null;
         }
     }
-    
     
     public static  String leerArchivo(String ruta){
         String texto=""; 

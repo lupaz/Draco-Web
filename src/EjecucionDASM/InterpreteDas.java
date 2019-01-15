@@ -7,6 +7,7 @@ package EjecucionDASM;
 
 import AST.Nodo;
 import Dasm.Cadena;
+import Dibujo.Dibujo;
 import draco_web.LineasText;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -32,6 +33,7 @@ public class InterpreteDas extends Thread{
     JTable tstack;
     JTable theap;
     JTable tpila;
+    Dibujo dibujo;
     
     boolean debug;
     boolean detener;
@@ -72,7 +74,7 @@ public class InterpreteDas extends Thread{
         iniStack();
     }
     
-    public void iniComponentes( JTable tstack, JTable theap, JTable tpila, JTextArea consola,LineasText tmpL){
+    public void iniComponentes( JTable tstack, JTable theap, JTable tpila, JTextArea consola,LineasText tmpL, Dibujo dibujo){
         this.tpila = tpila;
         String cabPila[]={"Indice","Valor","Caracter"};
         modelPila= new DefaultTableModel();
@@ -90,6 +92,7 @@ public class InterpreteDas extends Thread{
         this.consola =consola;
         this.tmpL=tmpL;
         cadenas_estaticas();
+        this.dibujo=dibujo;
     }
     
     private void iniStack(){
@@ -106,115 +109,136 @@ public class InterpreteDas extends Thread{
         if(salto){
             ejecutar=false;
         }
-        for (Nodo Hijo : nodo.Hijos) {            
-            if(ejecutar){
-                String linea="0";
-                if (Hijo.Term != null) {
-                    switch (Hijo.Term.getNombre()) {
-                        case Cadena.CADENA: {
-                            //<editor-fold>
-                            break;
-                            //</editor-fold>                            
-                        }
-                        case Cadena.CUADRADO: {
-                            //<editor-fold>
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.GET_GLOBAL: {    
-                            //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                int punt= pilaAux.pop().intValue();
-                                Double val = heap[punt];
-                                pilaAux.push(val);
-                            }else{ //es un numero
-                                int pos = Integer.parseInt( Hijo.Hijos.get(0).Token.getValor()+"");
-                                Double val=heap[pos];
-                                pilaAux.push(val);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.GET_LOCAL: {
-                           //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                int punt= pilaAux.pop().intValue();
-                                Double val = stack[punt];
-                                pilaAux.push(val);
-                            }else{ //es un numero
-                                int pos = Integer.parseInt( Hijo.Hijos.get(0).Token.getValor()+"");
-                                Double val=stack[pos];
-                                pilaAux.push(val);
-                            }
-                            break;
-                           //</editor-fold>
-                        }
-                        case Cadena.LINEA: {
-                            //<editor-fold>
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.LLAMADA: {
-                            //<editor-fold>
-                            String nombre=Hijo.Hijos.get(0).Token.getValor().toString();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            Funcion fun=funciones.retornaFuncion(nombre);
-                            if(fun!=null){
-                                ejecutar(fun.Cuerpo,"",false);
-                            }else{
-                                System.out.println("DASM: No se encontro la funcion ->"+nombre);
-                                notificar("ERROR DASM: No se encontro la funcion ->"+nombre+"\n");
-                                return;
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.OVALO: {
-                            //<editor-fold>
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.PUNTO: {
-                            //<editor-fold>
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.SALTO: {
-                            //<editor-fold>
-                            String eti=Hijo.Hijos.get(0).Token.getValor().toString();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            ejecutar(nodo, eti,true);
-                            //aca va el debugs
-                            if (debug) {
-                                if (lineadeb(linea) || debugeando) {
-                                    pintarLinea(Integer.parseInt(linea), lineatmp);
-                                    lineatmp= Integer.parseInt(linea);
-                                    notificar("DEBUG ALERT: Se detuvo en la linea : " + linea +"  Archivo: "+archivoActual+"\n");
-                                    llenarHeap();
-                                    llenarPila();
-                                    llenarStack();
-                                    this.suspend(); // good practice                                    
+        if (nodo != null) {
+            for (Nodo Hijo : nodo.Hijos) {
+                if (ejecutar) {
+                    String linea = "0";
+                    if (Hijo.Term != null) {
+                        switch (Hijo.Term.getNombre()) {
+                            case Cadena.CADENA: {
+                                //<editor-fold>
+                                int inicio_cad = pilaAux.pop().intValue();
+                                String cadena = "";
+                                int i = 1;
+                                while (i != 0) {
+                                    i = heap[inicio_cad].intValue();
+                                    cadena += (char) heap[inicio_cad].intValue();
+                                    inicio_cad++;
                                 }
+                                int color = pilaAux.pop().intValue();
+                                String hexColor = String.format("#%06X", (0xFFFFFF & color));
+                                int posy = pilaAux.pop().intValue();
+                                int posx = pilaAux.pop().intValue();
+                                dibujo.addTexto(posx, posy, hexColor, cadena);
+                                break;
+                                //</editor-fold>                            
                             }
-                            return;
-                            //</editor-fold>
-                        }
-                        case Cadena.SALTO_SI: {
-                            //<editor-fold>
-                            String eti=Hijo.Hijos.get(0).Token.getValor().toString();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            int val = pilaAux.pop().intValue();
-                            if(val==0){
-                                ejecutar(nodo,eti,true);
+                            case Cadena.LINEA: {
+                                //<editor-fold>
+                                int grosor = pilaAux.pop().intValue();
+                                int color = pilaAux.pop().intValue();
+                                String hexColor = String.format("#%06X", (0xFFFFFF & color));
+                                int y2 = pilaAux.pop().intValue();
+                                int x2 = pilaAux.pop().intValue();
+                                int y = pilaAux.pop().intValue();
+                                int x = pilaAux.pop().intValue();
+                                dibujo.addLinea(x, y, x2, y2, hexColor, grosor);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.CUADRADO: {
+                                //<editor-fold>
+                                int alto = pilaAux.pop().intValue();
+                                int ancho = pilaAux.pop().intValue();
+                                int color = pilaAux.pop().intValue();
+                                String hexColor = String.format("#%06X", (0xFFFFFF & color));
+                                int y = pilaAux.pop().intValue();
+                                int x = pilaAux.pop().intValue();
+                                dibujo.addCuadrado(x, y, hexColor, ancho, alto);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.PUNTO: {
+                                //<editor-fold>
+                                int diametro = pilaAux.pop().intValue();
+                                int color = pilaAux.pop().intValue();
+                                String hexColor = String.format("#%06X", (0xFFFFFF & color));
+                                int y = pilaAux.pop().intValue();
+                                int x = pilaAux.pop().intValue();
+                                dibujo.addPunto(x, y, hexColor, diametro);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.OVALO: {
+                                //<editor-fold>
+                                int alto = pilaAux.pop().intValue();
+                                int ancho = pilaAux.pop().intValue();
+                                int color = pilaAux.pop().intValue();
+                                String hexColor = String.format("#%06X", (0xFFFFFF & color));
+                                int y = pilaAux.pop().intValue();
+                                int x = pilaAux.pop().intValue();
+                                dibujo.addOvalo(x, y, hexColor, ancho, alto);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.GET_GLOBAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    int punt = pilaAux.pop().intValue();
+                                    Double val = heap[punt];
+                                    pilaAux.push(val);
+                                } else { //es un numero
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    Double val = heap[pos];
+                                    pilaAux.push(val);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.GET_LOCAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    int punt = pilaAux.pop().intValue();
+                                    Double val = stack[punt];
+                                    pilaAux.push(val);
+                                } else { //es un numero
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    Double val = stack[pos];
+                                    pilaAux.push(val);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.LLAMADA: {
+                                //<editor-fold>
+                                String nombre = Hijo.Hijos.get(0).Token.getValor().toString();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                Funcion fun = funciones.retornaFuncion(nombre);
+                                if (fun != null) {
+                                    ejecutar(fun.Cuerpo, "", false);
+                                } else {
+                                    System.out.println("DASM: No se encontro la funcion ->" + nombre);
+                                    notificar("ERROR DASM: No se encontro la funcion ->" + nombre + "\n");
+                                    return;
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.SALTO: {
+                                //<editor-fold>
+                                String eti = Hijo.Hijos.get(0).Token.getValor().toString();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                ejecutar(nodo, eti, true);
+                                //aca va el debugs
                                 if (debug) {
                                     if (lineadeb(linea) || debugeando) {
                                         pintarLinea(Integer.parseInt(linea), lineatmp);
-                                        lineatmp= Integer.parseInt(linea);
-                                        notificar("DEBUG ALERT: Se detuvo en la linea : " + linea+"  Archivo: "+archivoActual+"\n");
+                                        lineatmp = Integer.parseInt(linea);
+                                        notificar("DEBUG ALERT: Se detuvo en la linea : " + linea + "  Archivo: " + archivoActual + "\n");
                                         llenarHeap();
                                         llenarPila();
                                         llenarStack();
@@ -222,391 +246,422 @@ public class InterpreteDas extends Thread{
                                     }
                                 }
                                 return;
-                            }                            
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.SALTO_SI2: {
-                            //<editor-fold>
-                            String eti=Hijo.Hijos.get(0).Token.getValor().toString();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            int val = pilaAux.peek().intValue();
-                            if(val==0){
-                                ejecutar(nodo,eti,true);
-                                if (debug) {
-                                    if (lineadeb(linea) || debugeando) {
-                                        pintarLinea(Integer.parseInt(linea), lineatmp);
-                                        lineatmp= Integer.parseInt(linea);
-                                        notificar("DEBUG ALERT: Se detuvo en la linea : " + linea+"  Archivo: "+archivoActual+"\n");
-                                        llenarHeap();
-                                        llenarPila();
-                                        llenarStack();
-                                        this.suspend(); // good practice                                    
+                                //</editor-fold>
+                            }
+                            case Cadena.SALTO_SI: {
+                                //<editor-fold>
+                                String eti = Hijo.Hijos.get(0).Token.getValor().toString();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                int val = pilaAux.pop().intValue();
+                                if (val == 0) {
+                                    ejecutar(nodo, eti, true);
+                                    if (debug) {
+                                        if (lineadeb(linea) || debugeando) {
+                                            pintarLinea(Integer.parseInt(linea), lineatmp);
+                                            lineatmp = Integer.parseInt(linea);
+                                            notificar("DEBUG ALERT: Se detuvo en la linea : " + linea + "  Archivo: " + archivoActual + "\n");
+                                            llenarHeap();
+                                            llenarPila();
+                                            llenarStack();
+                                            this.suspend(); // good practice                                    
+                                        }
                                     }
+                                    return;
                                 }
-                                return;
-                            }                            
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.SET_GLOBAL: {
-                            //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                Double valor = pilaAux.pop();
-                                int punt= pilaAux.pop().intValue();
-                                heap[punt]=valor;
-                            }else{ //es un numero
-                                Double valor = pilaAux.pop();
-                                int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor()+"");
-                                heap[pos]=valor;
+                                break;
+                                //</editor-fold>
                             }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.SET_LOCAL: {
-                            //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                Double valor = pilaAux.pop();
-                                int punt= pilaAux.pop().intValue();
-                                stack[punt]=valor;
-                            }else{ //es un numero
-                                Double valor = pilaAux.pop();
-                                int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor()+"");
-                                stack[pos]=valor;
+                            case Cadena.SALTO_SI2: {
+                                //<editor-fold>
+                                String eti = Hijo.Hijos.get(0).Token.getValor().toString();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                int val = pilaAux.peek().intValue();
+                                if (val == 0) {
+                                    ejecutar(nodo, eti, true);
+                                    if (debug) {
+                                        if (lineadeb(linea) || debugeando) {
+                                            pintarLinea(Integer.parseInt(linea), lineatmp);
+                                            lineatmp = Integer.parseInt(linea);
+                                            notificar("DEBUG ALERT: Se detuvo en la linea : " + linea + "  Archivo: " + archivoActual + "\n");
+                                            llenarHeap();
+                                            llenarPila();
+                                            llenarStack();
+                                            this.suspend(); // good practice                                    
+                                        }
+                                    }
+                                    return;
+                                }
+                                break;
+                                //</editor-fold>
                             }
-                            break;
-                            //</editor-fold>
-                        }                        
-                        case Cadena.TEE_GLOBAL: {
-                            //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                Double valor = pilaAux.pop();
-                                int punt= pilaAux.peek().intValue();
-                                heap[punt]=valor;
-                            }else{ //es un numero
-                                Double valor = pilaAux.peek();
-                                int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor()+"");
-                                heap[pos]=valor;
+                            case Cadena.SET_GLOBAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    Double valor = pilaAux.pop();
+                                    int punt = pilaAux.pop().intValue();
+                                    heap[punt] = valor;
+                                } else { //es un numero
+                                    Double valor = pilaAux.pop();
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    heap[pos] = valor;
+                                }
+                                break;
+                                //</editor-fold>
                             }
-                            break;
-                            //</editor-fold>
-                        }                        
-                        case Cadena.TEE_LOCAL: {
-                            //<editor-fold>
-                            String tipo=Hijo.Hijos.get(0).Token.getNombre();
-                            linea = Hijo.Hijos.get(0).Token.getLinea();
-                            if(tipo.equals(Cadena.calc)){
-                                Double valor = pilaAux.pop();
-                                int punt= pilaAux.peek().intValue();
-                                stack[punt]=valor;
-                            }else{ //es un numero
-                                Double valor = pilaAux.peek();
-                                int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor()+"");
-                                stack[pos]=valor;
+                            case Cadena.SET_LOCAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    Double valor = pilaAux.pop();
+                                    int punt = pilaAux.pop().intValue();
+                                    stack[punt] = valor;
+                                } else { //es un numero
+                                    Double valor = pilaAux.pop();
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    stack[pos] = valor;
+                                }
+                                break;
+                                //</editor-fold>
                             }
-                            break;
-                            //</editor-fold>
-                        }
-                    }
-                } else { //es una token
-                    switch (Hijo.Token.getNombre()) {
-                        case Cadena.Add: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            Double res= v1+v2;
-                            pilaAux.push(res);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.And: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1 == 1.0 && v2 == 1.0 ){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
+                            case Cadena.TEE_GLOBAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    Double valor = pilaAux.pop();
+                                    int punt = pilaAux.peek().intValue();
+                                    heap[punt] = valor;
+                                } else { //es un numero
+                                    Double valor = pilaAux.peek();
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    heap[pos] = valor;
+                                }
+                                break;
+                                //</editor-fold>
                             }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.C: { //insertare un -2
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            pilaAux.push(-2.0);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.D: { //insertare un -3
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            pilaAux.push(-3.0);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Diff: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            Double res= v1-v2;
-                            pilaAux.push(res);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Div: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v2 == 0.0){
-                                notificar("DASM: Error operacion indefinida, 0 en el divisor."+"\n");
-                                return;
+                            case Cadena.TEE_LOCAL: {
+                                //<editor-fold>
+                                String tipo = Hijo.Hijos.get(0).Token.getNombre();
+                                linea = Hijo.Hijos.get(0).Token.getLinea();
+                                if (tipo.equals(Cadena.calc)) {
+                                    Double valor = pilaAux.pop();
+                                    int punt = pilaAux.peek().intValue();
+                                    stack[punt] = valor;
+                                } else { //es un numero
+                                    Double valor = pilaAux.peek();
+                                    int pos = Integer.parseInt(Hijo.Hijos.get(0).Token.getValor() + "");
+                                    stack[pos] = valor;
+                                }
+                                break;
+                                //</editor-fold>
                             }
-                            Double res= v1/v2;
-                            pilaAux.push(res);
-                            break;
-                            //</editor-fold>
                         }
-                        case Cadena.Eqz: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(Objects.equals(v1, v2)){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Eqs: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(!Objects.equals(v2,v1)){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.F: { //insertare un -4
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            pilaAux.push(-4.0);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Gt: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1>v2){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Pot:{
-                            //<editor-fold>
-                            try {
+                    } else { //es una token
+                        switch (Hijo.Token.getNombre()) {
+                            case Cadena.Add: {
+                                //<editor-fold>
                                 linea = Hijo.Token.getLinea();
-                                Double v2= pilaAux.pop();
+                                Double v2 = pilaAux.pop();
                                 Double v1 = pilaAux.pop();
-                                Double res= Math.pow(v1,v2);
+                                Double res = v1 + v2;
                                 pilaAux.push(res);
-                            } catch (Exception e) {
-                                System.out.println("DASM: Error potencia fuera de rango.");
-                                notificar("ERROR DASM: Error potencia fuera de rango.\n");
-                                return;
-                            }                            
-                            break;
-                            //</editor-fold>
-                        }                        
-                        case Cadena.Gte: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1>=v2){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Label: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Lt: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1<v2){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Lte: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1<=v2){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Mod: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v2 == 0.0){
-                                System.out.println("DASM: Error operacion indefinida, 0 en el modulo.");
-                                notificar("ERROR DASM: Error operacion indefinida, 0 en el modulo.\n");
-                                return;
-                            }
-                            Double res= v1%v2;
-                            pilaAux.push(res);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Mul: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            Double res= v1*v2;
-                            pilaAux.push(res);
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Not: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();                            
-                            Double v1 = pilaAux.pop();
-                            if(v1 == 1.0){
-                                pilaAux.push(0.0);
-                            }else{
-                                pilaAux.push(1.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Or: {
-                            //<editor-fold>
-                            linea = Hijo.Token.getLinea();
-                            Double v2= pilaAux.pop();
-                            Double v1 = pilaAux.pop();
-                            if(v1 == 1.0 || v2 == 1.0 ){
-                                pilaAux.push(1.0);
-                            }else{
-                                pilaAux.push(0.0);
-                            }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.Print: {
-                            //<editor-fold>
-                            Double tipo = pilaAux.pop();
-                            Double valor = pilaAux.pop();
-                            linea = Hijo.Token.getLinea();                            
-                        switch (tipo.intValue()){
-                            case -2:
-                                char car= (char)valor.intValue(); 
-                                System.out.print(car); //esto lo debo imprimir en la consola de la app 
-                                notificar(car+"");
                                 break;
-                            case -3:
-                                System.out.print(valor.intValue()); //esto lo debo imprimir en la consola de la app
-                                notificar(valor.intValue()+"");
+                                //</editor-fold>
+                            }
+                            case Cadena.And: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 == 1.0 && v2 == 1.0) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
                                 break;
-                            case -4:
-                                System.out.print(valor);  //esto lo debo imprimir en la consola de la app
-                                notificar(valor+"");
+                                //</editor-fold>
+                            }
+                            case Cadena.C: { //insertare un -2
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                pilaAux.push(-2.0);
                                 break;
-                            default:
-                                System.out.println("DASM : Error, formato invalido para Print.");
-                                notificar("DASM : Error, formato invalido para Print.\n");
-                                return;
+                                //</editor-fold>
+                            }
+                            case Cadena.D: { //insertare un -3
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                pilaAux.push(-3.0);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Diff: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                Double res = v1 - v2;
+                                pilaAux.push(res);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Div: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v2 == 0.0) {
+                                    notificar("DASM: Error operacion indefinida, 0 en el divisor." + "\n");
+                                    return;
+                                }
+                                Double res = v1 / v2;
+                                pilaAux.push(res);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Ret: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                int punt = pilaAux.pop().intValue();
+                                Double valor = pilaAux.pop();
+                                stack[punt] = valor;
+                                break;
+                                //<editor-fold>
+                            }
+                            case Cadena.Eqz: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (Objects.equals(v1, v2)) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Eqs: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (!Objects.equals(v2, v1)) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.F: { //insertare un -4
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                pilaAux.push(-4.0);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Gt: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 > v2) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Pot: {
+                                //<editor-fold>
+                                try {
+                                    linea = Hijo.Token.getLinea();
+                                    Double v2 = pilaAux.pop();
+                                    Double v1 = pilaAux.pop();
+                                    Double res = Math.pow(v1, v2);
+                                    pilaAux.push(res);
+                                } catch (Exception e) {
+                                    System.out.println("DASM: Error potencia fuera de rango.");
+                                    notificar("ERROR DASM: Error potencia fuera de rango.\n");
+                                    return;
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Gte: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 >= v2) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Label: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Lt: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 < v2) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Lte: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 <= v2) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Mod: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v2 == 0.0) {
+                                    System.out.println("DASM: Error operacion indefinida, 0 en el modulo.");
+                                    notificar("ERROR DASM: Error operacion indefinida, 0 en el modulo.\n");
+                                    return;
+                                }
+                                Double res = v1 % v2;
+                                pilaAux.push(res);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Mul: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                Double res = v1 * v2;
+                                pilaAux.push(res);
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Not: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v1 = pilaAux.pop();
+                                if (v1 == 1.0) {
+                                    pilaAux.push(0.0);
+                                } else {
+                                    pilaAux.push(1.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Or: {
+                                //<editor-fold>
+                                linea = Hijo.Token.getLinea();
+                                Double v2 = pilaAux.pop();
+                                Double v1 = pilaAux.pop();
+                                if (v1 == 1.0 || v2 == 1.0) {
+                                    pilaAux.push(1.0);
+                                } else {
+                                    pilaAux.push(0.0);
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.Print: {
+                                //<editor-fold>
+                                Double tipo = pilaAux.pop();
+                                Double valor = pilaAux.pop();
+                                linea = Hijo.Token.getLinea();
+                                switch (tipo.intValue()) {
+                                    case -2:
+                                        char car = (char) valor.intValue();
+                                        System.out.print(car); //esto lo debo imprimir en la consola de la app 
+                                        notificar(car + "");
+                                        break;
+                                    case -3:
+                                        System.out.print(valor.intValue()); //esto lo debo imprimir en la consola de la app
+                                        notificar(valor.intValue() + "");
+                                        break;
+                                    case -4:
+                                        System.out.print(valor);  //esto lo debo imprimir en la consola de la app
+                                        notificar(valor + "");
+                                        break;
+                                    default:
+                                        System.out.println("DASM : Error, formato invalido para Print.");
+                                        notificar("DASM : Error, formato invalido para Print.\n");
+                                        return;
+                                }
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.decimal: {
+                                //<editor-fold>
+                                String val = Hijo.Token.getValor().toString();
+                                linea = Hijo.Token.getLinea();
+                                pilaAux.push(Double.parseDouble(val));
+                                break;
+                                //</editor-fold>
+                            }
+                            case Cadena.numero: {
+                                //<editor-fold>
+                                String val = Hijo.Token.getValor().toString();
+                                linea = Hijo.Token.getLinea();
+                                pilaAux.push(Double.parseDouble(val));
+                                break;
+                                //</editor-fold>
+                            }
                         }
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.decimal:
-                        {
-                            //<editor-fold>
-                            String val= Hijo.Token.getValor().toString();
-                            linea = Hijo.Token.getLinea();
-                            pilaAux.push(Double.parseDouble(val));
-                            break;
-                            //</editor-fold>
-                        }
-                        case Cadena.numero:{
-                            //<editor-fold>
-                            String val= Hijo.Token.getValor().toString();
-                            linea = Hijo.Token.getLinea();
-                            pilaAux.push(Double.parseDouble(val));
-                            break;
-                            //</editor-fold>
-                        }                          
                     }
-                }
-                //aca va el debugs
-                if (debug) {
-                    if (lineadeb(linea) || debugeando) {
-                        pintarLinea(Integer.parseInt(linea), lineatmp);
-                        lineatmp= Integer.parseInt(linea);
-                        notificar("DEBUG ALERT: Se detuvo en la linea : " + linea+"  Archivo: "+archivoActual+"\n");
-                        llenarHeap();
-                        llenarPila();
-                        llenarStack();
-                        this.suspend(); // good practice                        
+                    //aca va el debugs
+                    if (debug) {
+                        if (lineadeb(linea) || debugeando) {
+                            pintarLinea(Integer.parseInt(linea), lineatmp);
+                            lineatmp = Integer.parseInt(linea);
+                            notificar("DEBUG ALERT: Se detuvo en la linea : " + linea + "  Archivo: " + archivoActual + "\n");
+                            llenarHeap();
+                            llenarPila();
+                            llenarStack();
+                            this.suspend(); // good practice                        
+                        }
                     }
-                }
-                //para el stop
-                if (detener) {
-                    return;
-                }
-            }else{
-                if (Hijo.Token != null) {
-                    if (Hijo.Token.getNombre().equals(Cadena.Label)) {
-                        String etq = Hijo.Token.getValor().toString();
-                        if (et.equals(etq)){
-                            ejecutar=true;
+                    //para el stop
+                    if (detener) {
+                        return;
+                    }
+                } else {
+                    if (Hijo.Token != null) {
+                        if (Hijo.Token.getNombre().equals(Cadena.Label)) {
+                            String etq = Hijo.Token.getValor().toString();
+                            if (et.equals(etq)) {
+                                ejecutar = true;
+                            }
                         }
                     }
                 }
             }
-        }        
+        }
+    
     }
     
     public void capturarFuns(Nodo nodo){

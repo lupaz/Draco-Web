@@ -25,6 +25,7 @@ public class Punto {
     }
     public void paint(Graphics2D g2d) {
         g2d.setColor( Color.decode(color));
-        g2d.fillOval(posX, posY, diametro, diametro);        
+        
+        g2d.fillOval(posX-(diametro/2), posY-(diametro/2), diametro, diametro);        
     }
 }

@@ -8,39 +8,42 @@ package draco_web;
 import AST.DibujarAST;
 import Dasm.Par_Dasm;
 import Dasm.Scan_Dasm;
+import Dibujo.Dibujo;
 import Dplusplus.Par_Dplus;
 import Dplusplus.Scan_Dplus;
+import DracoScript.Par_DS;
+import DracoScript.Scan_DS;
 import EjecucionDASM.InterpreteDas;
+import EjecucionDS.InterpreteDS;
 import TraductorDpp.Generador;
 import TraductorDpp.Traductor;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
-import java.io.FileFilter;
+import java.io.File;
+
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
+
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
+
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-
+import javax.swing.text.Document;
 /**
  *
  * @author Luis
@@ -56,8 +59,12 @@ public class InterfazD extends javax.swing.JFrame{
     Traductor traduc;
     boolean dpp=false;
     boolean dsm=false;
+    boolean djs = false;
     InterpreteDas inter;
+    InterpreteDS interD;
+    Dibujo dibujo;
     int lineatmp=-1;
+    static  GraphicsConfiguration gc;
     /**
      * Creates new form InterfazD
      */
@@ -65,6 +72,7 @@ public class InterfazD extends javax.swing.JFrame{
     public InterfazD() {
         initComponents();
         LineasText tmpL = new LineasText();
+        this.dibujo = new Dibujo();
         posicionPuntero(tmpL);
         tmpL.text_pane.addMouseListener(new MouseAdapter() {
             @Override
@@ -160,6 +168,7 @@ public class InterfazD extends javax.swing.JFrame{
         compila = new javax.swing.JMenuItem();
         actualiza = new javax.swing.JMenuItem();
         quitarpest = new javax.swing.JMenuItem();
+        verDibujo = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -261,8 +270,18 @@ public class InterfazD extends javax.swing.JFrame{
         tabs.setAutoscrolls(true);
 
         busqueda.setText("Busqueda");
+        busqueda.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                busquedaActionPerformed(evt);
+            }
+        });
 
         buscar.setText("Buscar");
+        buscar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buscarActionPerformed(evt);
+            }
+        });
 
         debug.setBackground(new java.awt.Color(255, 153, 0));
         debug.setText("Debugear");
@@ -369,6 +388,14 @@ public class InterfazD extends javax.swing.JFrame{
         });
         jMenu2.add(quitarpest);
 
+        verDibujo.setText("Ver Dibujo");
+        verDibujo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                verDibujoActionPerformed(evt);
+            }
+        });
+        jMenu2.add(verDibujo);
+
         jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
@@ -446,6 +473,23 @@ public class InterfazD extends javax.swing.JFrame{
 
     private void guardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_guardarActionPerformed
         // TODO add your handling code here:
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar Archivo");   
+        int userSelection = fileChooser.showSaveDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+            int tab=tabs.getSelectedIndex();         
+            String titulo=tabs.getTitleAt(tab);
+            JScrollPane scroll =(JScrollPane)tabs.getComponentAt(tab);
+            JPanel  tmpP = (JPanel)scroll.getViewport().getView();
+            LineasText tmpL = (LineasText)tmpP.getComponent(0);
+            if(titulo.contains("traduccion")){
+                escribirArchivo(fileToSave.getAbsolutePath(),tmpL.text_pane.getText());
+                notificar("AVISO: Archivo DASM guardado Correctamente. :D\n");
+            }  
+        }
+ 
     }//GEN-LAST:event_guardarActionPerformed
 
     private void actualizaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_actualizaActionPerformed
@@ -465,7 +509,7 @@ public class InterfazD extends javax.swing.JFrame{
     private void cargarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cargarActionPerformed
         JFileChooser filechoos = new JFileChooser();
         FileNameExtensionFilter filter = new FileNameExtensionFilter("D++", "dpp");
-        FileNameExtensionFilter filter2 = new FileNameExtensionFilter("Ds", "ds");
+        FileNameExtensionFilter filter2 = new FileNameExtensionFilter("Djs", "djs");
         FileNameExtensionFilter filter3 = new FileNameExtensionFilter("Dasm", "dasm");
         filechoos.setFileFilter(filter3);
         filechoos.setFileFilter(filter2);
@@ -615,15 +659,89 @@ public class InterfazD extends javax.swing.JFrame{
                 //vamos a comenzar la trduccion.
                 dpp=true;
                 dsm=false;
+                djs=false;
                 traduc = new Traductor(parser.raiz, tmpL.lineasdeb,title);
                 traduc.setConsolas(errores, consola, dasm, tablaS,tmpL);
                 traduc.start();
+                LineasText tmpL2 = new LineasText();
+                posicionPuntero(tmpL2);
+                //<editor-fold desc="evento debuger">
+                tmpL2.text_pane.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        if (e.getClickCount() == 2) {
+                            //int linea = tmpL.care
+                            int linea = Integer.parseInt(noLinea.getText());
+                            try {
+                                String text = tmpL2.doc.getText(0, tmpL2.doc.getLength());
+                                int start = 0;
+                                int end = 0;
+                                int line = 0;
+                                boolean even = true;
+                                while ((end = text.indexOf('\n', start)) >= 0) {
+                                    line++;
+                                    if (line == linea) {
+                                        if (tmpL2.exiteLine(linea)) {
+                                            Object tmp = tmpL2.hilite.addHighlight(start, end + 1, normalPainter);
+                                            tmpL2.hilite.removeHighlight(tmpL2.quitarline(linea));
+                                            tmpL2.hilite.removeHighlight(tmp);
+                                            break;
+                                        } else {
+                                            tmpL2.reflines.add(tmpL2.hilite.addHighlight(start, end + 1, redPainter));
+                                            tmpL2.lineasdeb.add(linea);
+                                            break;
+                                        }
+                                    }
+                                    start = end + 1;
+                                }
+                            } catch (BadLocationException ex) {
+                                System.out.println(ex.getMessage());
+                            }
+                            System.out.println("Se ha hecho doble click en la linea -> " + linea);
+                        }
+                    }
+                });
+                //</editor-fold>
+                JPanel tmpP2 = new JPanel(new BorderLayout());
+                tmpP2.add(tmpL2, BorderLayout.WEST);
+                tmpP2.add(tmpL2.scrollPane, BorderLayout.CENTER);
+                tmpP2.setPreferredSize(new Dimension(1,1));
+                JScrollPane scrollPane = new JScrollPane();
+                scrollPane.setViewportView(tmpP2);
+                tabs.addTab("traduccion.dasm",scrollPane);
+                tabs.setSelectedIndex(tabs.getTabCount()-1);
+                tmpL2.text_pane.setText(Traductor.codigo_generado);
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }            
         }else if(title.contains(".ds")){
             //aca ira el analisis de dracoscript
-        
+            try {
+                JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
+                JPanel  tmpP = (JPanel)scroll.getViewport().getView();
+                LineasText tmpL = (LineasText)tmpP.getComponent(0);
+                Scan_Dplus scanner = new Scan_Dplus(new BufferedReader(new StringReader(tmpL.text_pane.getText())));
+                scanner.pintar= new Pintar(tmpL.sc, tmpL.doc);
+                scanner.nomArch=title;
+                Par_Dplus parser = new Par_Dplus(scanner);
+                parser.nombreArch=title;
+                parser.parse();
+                if(notificarErrrores()){
+                    notificar("AVISO : Existen errores Lexicos/Sintacticos, ver consola de errores.");
+                    listaErrores.clear();
+                }
+                DibujarAST dibuja = new  DibujarAST();
+                dibuja.generarImg(parser.raiz,"draco");
+                //vamos a comenzar la trduccion.
+                dpp=false;
+                dsm=false;
+                djs =true;
+                interD = new InterpreteDS(parser.raiz, tmpL.lineasdeb,title);
+                interD.iniciar_Coponentes(consola, tmpL, dibujo, tabs, noLinea, noColumna);
+                interD.start();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
         }else if(title.contains(".dasm")){            
             try {
                 JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
@@ -643,8 +761,9 @@ public class InterfazD extends javax.swing.JFrame{
                 //iniciamos la ejecucion de Dasm
                 dsm=true;
                 dpp=false;
+                djs=false;
                 inter = new InterpreteDas(parser.raiz, tmpL.lineasdeb,title);
-                inter.iniComponentes(tStack, tHeap, tPila, consola,tmpL);
+                inter.iniComponentes(tStack, tHeap, tPila, consola,tmpL,dibujo);
                 inter.start();                
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
@@ -659,6 +778,7 @@ public class InterfazD extends javax.swing.JFrame{
     private void compilaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compilaActionPerformed
         inter=null;
         traduc=null;
+        interD=null;
         int index = tabs.getSelectedIndex();        
         String title = tabs.getTitleAt(index); 
         if(title.contains(".dpp")){
@@ -734,8 +854,30 @@ public class InterfazD extends javax.swing.JFrame{
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
             }            
-        }else if(title.contains(".ds")){
+        }else if(title.contains(".djs")){
             //aca ira el analisis de dracoscript
+            try {
+                JScrollPane scroll =(JScrollPane)tabs.getComponentAt(index);
+                JPanel  tmpP = (JPanel)scroll.getViewport().getView();
+                LineasText tmpL = (LineasText)tmpP.getComponent(0);
+                Scan_DS scanner = new Scan_DS(new BufferedReader(new StringReader(tmpL.text_pane.getText())));
+                scanner.pintar= new Pintar(tmpL.sc, tmpL.doc);
+                scanner.nomArch=title;
+                Par_DS parser = new Par_DS(scanner);
+                parser.nombreArch=title;
+                parser.parse();
+                if(notificarErrrores()){
+                    notificar("AVISO : Existen errores Lexicos/Sintacticos, ver consola de errores.");
+                    listaErrores.clear();
+                }
+                DibujarAST dibuja = new  DibujarAST();
+                dibuja.generarImg(parser.raiz,"draS");
+                interD = new InterpreteDS(parser.raiz, title);
+                interD.iniciar_Coponentes(consola, tmpL,dibujo,tabs,noLinea,noColumna);
+                interD.start();
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
             //alto nivel 
         }else if(title.contains(".dasm")){
              try {
@@ -744,18 +886,21 @@ public class InterfazD extends javax.swing.JFrame{
                 LineasText tmpL = (LineasText)tmpP.getComponent(0);
                 Scan_Dasm scanner = new Scan_Dasm(new BufferedReader(new StringReader(tmpL.text_pane.getText())));
                 scanner.nomArch=title;
-                 Par_Dasm parser = new Par_Dasm(scanner);
+                Par_Dasm parser = new Par_Dasm(scanner);
                 parser.nombreArch=title;
-                parser.parse();
+                parser.parse();                
                 if(notificarErrrores()){
                     notificar("AVISO : Existen errores Lexicos/Sintacticos, ver consola de errores.");
                     listaErrores.clear();
                 }
                 DibujarAST dibuja = new  DibujarAST();
                 dibuja.generarImg(parser.raiz,"dasm");
+                inter = new InterpreteDas(parser.raiz, title);
+                inter.iniComponentes(tStack, tHeap, tPila, consola, tmpL, dibujo);
+                inter.start();
             } catch (Exception ex) {
                 System.out.println(ex.getMessage());
-            }
+            } 
         }else{
             System.out.println("No se reconocio una extension de fichero valida");
             notificar("No se reconocio una extension de fichero valida");
@@ -852,6 +997,60 @@ public class InterfazD extends javax.swing.JFrame{
         tabs.setSelectedIndex(tabs.getTabCount()-1);
     }//GEN-LAST:event_nuevoDasmActionPerformed
 
+    private void verDibujoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_verDibujoActionPerformed
+        // TODO add your handling code here:
+        JFrame frame = new JFrame();
+        frame.setTitle("Welcome to the jungle XD");
+        frame.setSize(600, 600);
+        frame.setLocation(200, 200);
+        frame.add(dibujo);        
+        frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setResizable(false);        
+    }//GEN-LAST:event_verDibujoActionPerformed
+
+    private void buscarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buscarActionPerformed
+            // TODO add your handling code here:
+        int tab = tabs.getSelectedIndex();
+        String titulo = tabs.getTitleAt(tab);
+        JScrollPane scroll = (JScrollPane) tabs.getComponentAt(tab);
+        JPanel tmpP = (JPanel) scroll.getViewport().getView();
+        LineasText tmpL = (LineasText) tmpP.getComponent(0);        
+        try {
+            Document doc = tmpL.text_pane.getDocument();
+            String text = tmpL.text_pane.getText(0, doc.getLength());
+            int pos = tmpL.text_pane.getCaretPosition();
+            boolean found = false;
+            int findLength = busqueda.getText().length();
+            // Rest the search position if we're at the end of the document
+            if (pos + findLength > doc.getLength()) {
+                pos = 0;
+            }
+            while (pos + findLength <= doc.getLength()) {
+                // Extract the text from teh docuemnt
+                String match = doc.getText(pos, findLength).toLowerCase();
+                // Check to see if it matches or request
+                if (match.equals(busqueda.getText())) {
+                    found = true;
+                    break;
+                }
+                pos++;
+            }
+            if (found) {
+                tmpL.text_pane.setSelectionStart(pos);
+                tmpL.text_pane.setSelectionEnd(pos + busqueda.getText().length());
+                tmpL.text_pane.getCaret().setSelectionVisible(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+    }//GEN-LAST:event_buscarActionPerformed
+
+    private void busquedaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_busquedaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_busquedaActionPerformed
+
     /**
      * @param args the command line arguments
     */
@@ -941,6 +1140,25 @@ public class InterfazD extends javax.swing.JFrame{
         return false;
     }
     
+    public void escribirArchivo(String Ruta,String texto){
+   
+        FileWriter arch=null;
+        PrintWriter  pw;
+        try{
+            arch = new FileWriter(Ruta);
+            pw = new PrintWriter(arch);
+            //String tmp=ordenar_instancias();
+            pw.println(texto);
+            
+            if (null !=arch){
+                arch.close();
+                notificar("Archivo creado correctamente...");
+            }
+        }catch(Exception e){
+            notificar("Error al crear archivo xml: "+e);
+        }
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu Archivo;
     private javax.swing.JMenuItem actualiza;
@@ -983,6 +1201,7 @@ public class InterfazD extends javax.swing.JFrame{
     public javax.swing.JTable tStack;
     public javax.swing.JTable tablaS;
     private javax.swing.JTabbedPane tabs;
+    private javax.swing.JMenuItem verDibujo;
     // End of variables declaration//GEN-END:variables
 
 }

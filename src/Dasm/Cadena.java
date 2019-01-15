@@ -58,6 +58,7 @@ public class Cadena {
     F =                 "F",        
     call =              "call",
     calc =              "calc",
+    Ret =               "Ret",       
     Pot =               "Pot",        
     Function =          "Function",
             

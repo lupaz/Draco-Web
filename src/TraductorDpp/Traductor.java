@@ -185,8 +185,8 @@ public class Traductor extends Thread{
                 // <editor-fold defaultstate="collapsed">
                 switch (nodo.Hijos.size()) {
                     case 3:
-                        String line3 = (nodo.Hijos.get(1).Token.getLinea() + 1) + "";
-                        String column3 = (nodo.Hijos.get(1).Token.getColumna() + 1) + "";
+                        String line3 = (nodo.Hijos.get(1).Token.getLinea());
+                        String column3 = (nodo.Hijos.get(1).Token.getColumna()) + "";
                         retorno ret3 = comprobarExp(nodo.Hijos.get(0));
                         retorno ret33 = comprobarExp(nodo.Hijos.get(2));
                         // cuando se comparan numericos
@@ -624,8 +624,9 @@ public class Traductor extends Thread{
                                                     return ret4;
                                                 }
                                                 case Cadena.caracter: {
-                                                    String car1 = Generador.llamada_car_a_cad((cima.tamanio + 3) + "", ret4.cod_generado);//sumo el tamano de concat
-                                                    String car2 = Generador.llamada_car_a_cad((cima.tamanio + 3), ret44.cod_generado);
+                                                    int tam=cima.tamanio + 3;
+                                                    String car1 = Generador.llamada_car_a_cad(tam+"", ret4.cod_generado);//sumo el tamano de concat
+                                                    String car2 = Generador.llamada_car_a_cad(tam+"", ret44.cod_generado);
                                                     String concat = Generador.llamada_concat(cima.tamanio + "", car1, car2);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
@@ -685,7 +686,8 @@ public class Traductor extends Thread{
                                                     return ret4;
                                                 }
                                                 case Cadena.cadena: {
-                                                    String concat = Generador.llamada_concat(cima.tamanio + "", ret4.cod_generado, ret44.cod_generado);
+                                                    int tama= (cima.tamanio +5);
+                                                    String concat = Generador.llamada_concat( tama+"", ret4.cod_generado, ret44.cod_generado);
                                                     ret4.cod_generado = concat;
                                                     ret4.Linea = line4;
                                                     ret4.Columna = column4;
@@ -1735,12 +1737,14 @@ public class Traductor extends Thread{
                             for (int i = 0; i < params.size(); i++) {
                                 codigo_dasm += Generador.paso_parametro((i + 1) + "", cima.tamanio + "", params.get(i).cod_generado);
                             }
+                            codigo_dasm+="//------------------------------ LLAMADA A FUN --------------------------------\n";
                             //hacemos el cambio de ambito
                             codigo_dasm += Generador.aumentar_ambito(cima.tamanio + "");
                             //llamamos a la fun sin ret
                             codigo_dasm += Generador.llamada_con_ret(fun.Nombre);
                             //regresamos al ambito
                             codigo_dasm += Generador.disminuir_ambito(cima.tamanio + "");
+                            codigo_dasm+="//------------------------------ FIN LLAMADA  --------------------------------\n";
                             retorno ret = new retorno("", fun.Tipo, linea, columna);
                             ret.cod_generado = codigo_dasm;
                             return ret;
@@ -1845,7 +1849,7 @@ public class Traductor extends Thread{
                 Simbolo sim = existeVariable2(nombre);
                 if (sim != null) { //es una variable local 
                     //<editor-fold>
-                    if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                    if (sim.TipoObjeto.equals(Cadena.estructura)|| true) { //comprobamos que sea  una estrcutura
                         Estructura est = Estructuras.retornaEstructura(sim.tipo);
                         if (est != null) {
                             String nombre2 = nodo.Hijos.get(1).Token.getValor().toString();
@@ -2021,7 +2025,7 @@ public class Traductor extends Thread{
                     if (sim.TipoObjeto.equals(Cadena.arreglo)) { //comprobamos que sea  un arreglo
                         ArrayList<retorno> val_dims = new ArrayList<>();
                         capturarEXP(val_dims, nodo.Hijos.get(1));
-                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero)) {
+                        if (validarTipos(val_dims) && val_dims.get(0).tipo.equals(Cadena.entero) || true ) {
                             if (sim.numDims == val_dims.size()) { // comprobamos el numero de dimensiones
                                 String et_error = Generador.generar_etq();
                                 String et_correcto = Generador.generar_etq();
@@ -2747,7 +2751,7 @@ public class Traductor extends Thread{
                         cima.insertar(Param.getNombre(), sim);
                         pos++;
                     }
-                    codigo_dasm+="//-------------------------Fun/Met Traducido---------------------------\n";
+                    codigo_dasm+="//-----------------------------------------------Fun/Met Traducido----------------------------------------\n";
                     codigo_dasm+=Cadena.Function+"$"+fun.Nombre+"\n";
                     //inicializamos el retorno
                     codigo_dasm+=Cadena.get_local_0+"\n";
@@ -4451,7 +4455,7 @@ public class Traductor extends Thread{
                         Simbolo sim = existeVariable2(nombre);
                         if (sim != null) { //es una variable local 
                             //<editor-fold>
-                            if (sim.TipoObjeto.equals(Cadena.estructura)) { //comprobamos que sea  una estrcutura
+                            if (sim.TipoObjeto.equals(Cadena.estructura) || true) { //comprobamos que sea  una estrcutura
                                 Estructura est = Estructuras.retornaEstructura(sim.tipo);
                                 if (est != null) {
                                     String nombre2 = hijo.Hijos.get(1).Token.getValor().toString();
@@ -5221,7 +5225,13 @@ public class Traductor extends Thread{
                         linea = hijo.Hijos.get(0).Token.getLinea();
                         String columna = hijo.Hijos.get(0).Token.getColumna();
                         if(cima.continuar){
-                            Codigo_dasm+=Cadena.br+cima.etq_ini+"\n";
+                            Codigo_dasm+="//------------------------------------- CONTINUAR ------------------------------\n";
+                            Codigo_dasm+=Cadena.get_local_0+"\n";
+                            Codigo_dasm+=cima.tam_amb_ant_bc+"\n";
+                            Codigo_dasm+=Cadena.Diff+"\n";
+                            Codigo_dasm+=Cadena.set_local_0+"\n";
+                            Codigo_dasm+=Cadena.br+cima.etq_ini_padre+"\n";
+                            Codigo_dasm+="//-------------------------------------FIN CONTINUAR------------------------------\n";
                         }else{
                             String error = "ERROR SEMANTICO: El ambito de la sentecnia actual no permite la intruccion -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                             InterfazD.listaErrores.add(error);
@@ -5237,7 +5247,13 @@ public class Traductor extends Thread{
                         linea = hijo.Hijos.get(0).Token.getLinea();
                         String columna = hijo.Hijos.get(0).Token.getColumna();
                         if(cima.detener){
-                            Codigo_dasm+=Cadena.br+cima.etq_fin+"\n";
+                            Codigo_dasm+="//------------------------------ DETENER --------------------------------\n";
+                            Codigo_dasm+=Cadena.get_local_0+"\n";
+                            Codigo_dasm+=cima.tam_amb_ant_bc+"\n";
+                            Codigo_dasm+=Cadena.Diff+"\n";
+                            Codigo_dasm+=Cadena.set_local_0+"\n";
+                            Codigo_dasm+=Cadena.br+cima.etq_fin_padre+"\n";
+                            Codigo_dasm+="//------------------------------FIN DETENER--------------------------------";
                         }else{
                             String error = "ERROR SEMANTICO: El ambito de la sentecnia actual no permite la intruccion -> " + nombre + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                             InterfazD.listaErrores.add(error);
@@ -5254,15 +5270,23 @@ public class Traductor extends Thread{
                         String columna = hijo.Hijos.get(0).Token.getColumna();                        
                         if(cima.retorno && hijo.Hijos.get(1).Hijos.size()>0){
                             retorno ret= comprobarExp(hijo.Hijos.get(1).Hijos.get(0));
-                            Simbolo sim=existeVariable2("retorno");
-                            //posicion de la variable
-                            Codigo_dasm+=Cadena.get_local_0+"\n";
-                            Codigo_dasm+=calcular_prof(nombre)+"\n";
-                            Codigo_dasm+=Cadena.Diff+"\n";
+                            Simbolo sim=existeVariable2("retorno");                           
                             //asignamos el valor de retorno    
+                            Codigo_dasm+="//------------------------------ RETORNO --------------------------------\n";
                             Codigo_dasm+=ret.cod_generado;
-                            Codigo_dasm+=Cadena.set_local_calc+"\n";                               
-                            Codigo_dasm+=Cadena.br+iniFun.etq_fin+"\n";
+                            Codigo_dasm+=Cadena.get_local_0+"\n";
+                            Codigo_dasm+=calcular_prof("retorno")+"\n";
+                            Codigo_dasm+=Cadena.Diff+"\n";
+                            Codigo_dasm += Cadena.Ret + "\n";
+                            //posicion de la variable                            
+                            //if(iniFun!=cima){ 
+                                Codigo_dasm += Cadena.get_local_0 + "\n";
+                                Codigo_dasm += cima.tam_amb_ant+"\n";//(calcular_prof("retorno") - iniFun.tamanio) + "\n";
+                                Codigo_dasm += Cadena.Diff + "\n";
+                                Codigo_dasm += Cadena.set_local_0 + "\n";                                
+                           // }
+                            Codigo_dasm += Cadena.br + iniFun.etq_fin + "\n";
+                            Codigo_dasm+="//------------------------------ FIN RETORNO--------------------------------\n";
                         }else if(!cima.retorno && hijo.Hijos.get(1).Hijos.isEmpty()){                            
                             Codigo_dasm+=Cadena.br+iniFun.etq_fin+"\n";
                         }else{
@@ -5283,7 +5307,7 @@ public class Traductor extends Thread{
                         retorno ret= comprobarExp(hijo.Hijos.get(1)); 
                         cima.tamanio=cima.tamanio-2;
                         if(!ret.tipo.equals(Cadena.error)){
-                            Codigo_dasm += "//------------------llamada a print ----------------\n";
+                            Codigo_dasm += "//--------------------------- LLAMADA IMPRIMIR --------------------------------------\n";
                             //-2 para cadena, -3 para enteros, -4 para decimales
                             switch(ret.tipo){                                
                                 case Cadena.cadena:{
@@ -5302,7 +5326,7 @@ public class Traductor extends Thread{
                                     Codigo_dasm+= Generador.llamada_print(cima.tamanio+"",ret.cod_generado,"-3");
                                 }
                             }
-                            Codigo_dasm += "//--------------------------------------------------\n";
+                            Codigo_dasm += "//-------------------------------- FIN IMPRIMIR -----------------------------------\n";
                         }                        
                         // </editor-fold>
                         break;
@@ -5341,12 +5365,14 @@ public class Traductor extends Thread{
                                 for (int i = 0; i < params.size(); i++) {
                                     Codigo_dasm+= Generador.paso_parametro((i+1)+"",cima.tamanio+"", params.get(i).cod_generado);
                                 }
+                                Codigo_dasm+="//------------------------------ LLAMADA A FUN --------------------------------\n";
                                 //hacemos el cambio de ambito
                                 Codigo_dasm+=Generador.aumentar_ambito(cima.tamanio+"");                                
                                 //llamamos a la fun sin ret
                                 Codigo_dasm+=Generador.llamada_sin_ret(fun.Nombre);                                
-                                //regresamos al ambito
+                                //regresamos al ambito //si viene un return aca nunca llega  a esat disminucion del ambito
                                 Codigo_dasm+=Generador.disminuir_ambito(cima.tamanio+"");
+                                Codigo_dasm+="//------------------------------ FIN LLAMADA --------------------------------\n";
                             } else {
                                 String error = "ERROR SEMANTICO: El metodo/funcion que se esta invocando no esta definido -> " + key + " L: " + linea + " C: " + columna + " Clase: " + archivoActual;
                                 InterfazD.listaErrores.add(error);
@@ -5419,15 +5445,19 @@ public class Traductor extends Thread{
                         int tam_ambito_act = cima.tamanio;
                         if (r3.tipo.equals(Cadena.booleano)) {//se comprueba que sea un booleano
                             //Parte del primer if
-                            //<editor-fold>
+                            //<editor-fold>                           
                             TablaSimbolos tab = new TablaSimbolos(cima.Nivel, Cadena.ambito_if, cima.retorno, cima.detener, cima.continuar);
+                            tab.tam_amb_ant=cima.tam_amb_ant+tam_ambito_act;
+                            tab.tam_amb_ant_bc=cima.tam_amb_ant_bc+tam_ambito_act;
+                            tab.etq_ini_padre= cima.etq_ini_padre;
+                            tab.etq_fin_padre=cima.etq_fin_padre;
                             pilaSimbols.push(tab);                            
                             cima = tab;
                             tab.etq_fin=Generador.generar_etq();
                             int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
                             //asignamos su tamaño
                             cima.tamanio = tamano;
-                            cod_das += "//-------------------------Sentencia Si---------------------------\n";
+                            cod_das += "//-------------------------SENTECIA SI---------------------------\n";
                             cod_das += r3.cod_generado;
                             cod_das += Cadena.br_if+cima.etq_fin+"\n";
                             //cambio de ambito
@@ -5444,9 +5474,11 @@ public class Traductor extends Thread{
                             //etiqueta de salida
                             cod_das += Cadena.br+et_salida+"\n";
                             //etiqueta de la condicion no se cumplio
-                            cod_das += cima.etq_fin + " :\n";                                                    
+                            cod_das += cima.etq_fin + " :\n";
+                            cod_das += "//------------------------- FIN SENTECIA SI---------------------------\n";
                             pilaSimbols.pop();
                             cima = pilaSimbols.peek();
+                            
                             //</editor-fold>
                             //aca traducimos los if-else o else, si los trae                            
                             for (Nodo sub_hijo : hijo.Hijos.get(3).Hijos) {                                
@@ -5457,13 +5489,17 @@ public class Traductor extends Thread{
                                     retorno ret = comprobarExp(sub_hijo.Hijos.get(1));
                                     if (ret.tipo.equals(Cadena.booleano)) {
                                         TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_if_else, cima.retorno, cima.detener, cima.continuar);
+                                        tab1.tam_amb_ant=cima.tam_amb_ant+tam_ambito_act;
+                                        tab1.tam_amb_ant_bc=cima.tam_amb_ant_bc+tam_ambito_act;;
+                                        tab1.etq_ini_padre=cima.etq_ini_padre;
+                                        tab1.etq_fin_padre=cima.etq_fin_padre;
                                         pilaSimbols.push(tab1);
                                         cima = tab1;
                                         tab1.etq_fin=Generador.generar_etq();
                                         tamano = calcularTamano(sub_hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
                                         //asignamos su tamaño
                                         cima.tamanio = tamano;
-                                        cod_das += "//-------------------------Sentencia Sino Si---------------------------\n";
+                                        cod_das += "//-------------------------SENTENCIA SINO SI---------------------------\n";
                                         cod_das += ret.cod_generado;
                                         cod_das += Cadena.br_if + cima.etq_fin + "\n";
                                         //cambio de ambito
@@ -5479,6 +5515,7 @@ public class Traductor extends Thread{
                                         cod_das += Cadena.set_local_0 + "\n";
                                         //etiqueta de salida
                                         cod_das += Cadena.br + et_salida + "\n";
+                                        cod_das += "//------------------------- FIN SENTENCIA SINO SI -------------------------\n";
                                         //etiqueta de la condicion no se cumplio
                                         cod_das += cima.etq_fin + " :\n"; 
                                         pilaSimbols.pop();
@@ -5493,10 +5530,15 @@ public class Traductor extends Thread{
                                 } else { //es un SINO 
                                     //<editor-fold>
                                     TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_else, cima.retorno, cima.detener, cima.continuar);
+                                    tab1.tam_amb_ant=cima.tam_amb_ant+tam_ambito_act;
+                                    tab1.tam_amb_ant_bc=tam_ambito_act+tam_ambito_act;
+                                    tab1.tam_amb_ant_bc=cima.tam_amb_ant_bc+tam_ambito_act;
+                                    tab1.etq_ini_padre=cima.etq_ini_padre;
+                                    tab1.etq_fin_padre=cima.etq_fin_padre;
                                     pilaSimbols.push(tab1);
                                     cima = tab1;
                                     tamano = calcularTamano(sub_hijo.Hijos.get(1));
-                                    cod_das += "//-------------------------  Sentencia Sino  ---------------------------\n";
+                                    cod_das += "//-------------------------  SENTENCIA SINO  ---------------------------\n";
                                     //asignamos su tamaño
                                     cima.tamanio = tamano;
                                     //cambio de ambito
@@ -5510,6 +5552,7 @@ public class Traductor extends Thread{
                                     cod_das += tam_ambito_act + "\n";
                                     cod_das += Cadena.Diff + "\n";
                                     cod_das += Cadena.set_local_0 + "\n";
+                                    cod_das += "//-------------------------  FIN SENTENCIA SINO  ---------------------------\n";
                                     pilaSimbols.pop();
                                     cima = pilaSimbols.peek();
                                     //</editor-fold>
@@ -5538,15 +5581,19 @@ public class Traductor extends Thread{
                             int numero_it = 0;
                             //agregamos la nueva tabla de simbolos
                             TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_while, cima.retorno, true, true);
+                            tab1.tam_amb_ant=cima.tam_amb_ant+tam_ambito_act;
+                            tab1.tam_amb_ant_bc=tam_ambito_act;
                             pilaSimbols.push(tab1);
                             cima = tab1;
                             //generamos sus respectivas etiquetas
                             tab1.etq_ini=Generador.generar_etq();
-                            tab1.etq_fin=Generador.generar_etq();                            
+                            tab1.etq_fin=Generador.generar_etq();
+                            tab1.etq_ini_padre=tab1.etq_ini;
+                            tab1.etq_fin_padre=tab1.etq_fin;
                             int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
                             //asignamos su tamaño
                             cima.tamanio = tamano;
-                            cod_das += "//-------------------------Sentencia Mientras---------------------------\n";
+                            cod_das += "//---------------------------- SENTENCIA MIENTRAS -------------------------------\n";
                             cod_das += cima.etq_ini+" :\n";
                             cod_das += r7.cod_generado;
                             cod_das += Cadena.br_if+cima.etq_fin+"\n";
@@ -5561,9 +5608,9 @@ public class Traductor extends Thread{
                             cod_das += tam_ambito_act+"\n";
                             cod_das += Cadena.Diff+"\n";
                             cod_das += Cadena.set_local_0 + "\n";
-                            //etiqueta de salida
                             cod_das += Cadena.br+cima.etq_ini+"\n";
-                            cod_das+=cima.etq_fin+" :\n";                            
+                            cod_das +=  cima.etq_fin+" :"+"\n";
+                            cod_das += "//---------------------------- FIN SENTENCIA MIENTRAS -------------------------------\n";
                             //despues de evaluar las sentecnias sacamos la tabla 
                             pilaSimbols.pop();
                             cima = pilaSimbols.peek();
@@ -5674,12 +5721,16 @@ public class Traductor extends Thread{
                         //si se cumple prodecemos a crear el abito que dura este ciclo
                         if (r10.tipo.equals(Cadena.booleano)) {//aca todo va bien
                             int ambito_tmp=cima.tamanio;
-                            TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_for, cima.retorno, true, true);
+                            TablaSimbolos tab1 = new TablaSimbolos(cima.Nivel, Cadena.ambito_for, cima.retorno, true, true);                                                       
+                            tab1.tam_amb_ant=cima.tam_amb_ant+tam_ambito_act;
+                            tab1.tam_amb_ant_bc=tam_ambito_act;
                             pilaSimbols.push(tab1);
                             cima = tab1;
                             //generamos sus respectivas etiquetas
                             tab1.etq_ini=Generador.generar_etq();
-                            tab1.etq_fin=Generador.generar_etq();                            
+                            tab1.etq_fin=Generador.generar_etq();
+                            tab1.etq_ini_padre=tab1.etq_ini;
+                            tab1.etq_fin_padre=tab1.etq_fin;
                             int tamano =calcularTamano(hijo.Hijos.get(2)); // el uno es del retorno siempre se le apartara su pos de memoaria
                             //asignamos su tamaño
                             cima.tamanio = tamano;
@@ -5806,21 +5857,108 @@ public class Traductor extends Thread{
 //=================================== funcion nativa linea ====================================                 
                     case Cadena.LINEA:{
                         // <editor-fold defaultstate="collapsed">
-
+                        linea= hijo.Hijos.get(0).Token.getLinea();
+                        String x = comprobarExp(hijo.Hijos.get(1)).cod_generado;
+                        String y = comprobarExp(hijo.Hijos.get(2)).cod_generado;
+                        String x2 = comprobarExp(hijo.Hijos.get(3)).cod_generado;
+                        String y2 = comprobarExp(hijo.Hijos.get(4)).cod_generado;
+                        String color = hijo.Hijos.get(5).Token.getValor().toString();        
+                        String grosor= comprobarExp(hijo.Hijos.get(6)).cod_generado;                                                
+                        //convertimos el color a entero
+                        color=color.replace("#","");
+                        color =Integer.valueOf(color,16)+"";                        
+                        Codigo_dasm+="//-------------------------Nativa LINEA --------------------------\n";
+                        Codigo_dasm+=x;
+                        Codigo_dasm+=y;
+                        Codigo_dasm+=x2;
+                        Codigo_dasm+=y2;
+                        Codigo_dasm+=color+"\n";
+                        Codigo_dasm+=grosor;
+                        Codigo_dasm+=Cadena.Call+Cadena.line+"\n";
                         // </editor-fold>
                         break;
-                    }                                                      
+                    }
+//=================================== Funcion nativa Ovalo ====================================                 
+                    case Cadena.CADENA:{
+                        // <editor-fold defaultstate="collapsed">
+                        linea= hijo.Hijos.get(0).Token.getLinea();
+                        String x = comprobarExp( hijo.Hijos.get(1)).cod_generado;
+                        String y = comprobarExp(hijo.Hijos.get(2)).cod_generado;
+                        String color = hijo.Hijos.get(3).Token.getValor().toString();
+                        color=color.replace("#","");
+                        color =Integer.valueOf(color,16)+"";
+                        String cadena= comprobarExp(hijo.Hijos.get(4)).cod_generado;
+                        //convertimos el color a entero 
+                        Codigo_dasm+="//-------------------------Nativa CADENA --------------------------\n";
+                        Codigo_dasm+=x;
+                        Codigo_dasm+=y;
+                        Codigo_dasm+=color+"\n";
+                        Codigo_dasm+=cadena;                        
+                        Codigo_dasm+=Cadena.Call+Cadena.string+"\n";
+                        // </editor-fold>
+                        break;
+                    } 
+//=================================== Funcion nativa Ovalo ====================================                 
+                    case Cadena.CUADRADO:{
+                        // <editor-fold defaultstate="collapsed">
+                        linea= hijo.Hijos.get(0).Token.getLinea();
+                        String x = comprobarExp(hijo.Hijos.get(1)).cod_generado;
+                        String y = comprobarExp(hijo.Hijos.get(2)).cod_generado;
+                        String color = hijo.Hijos.get(3).Token.getValor().toString();        
+                        String ancho= comprobarExp(hijo.Hijos.get(4)).cod_generado;                        
+                        String alto= comprobarExp(hijo.Hijos.get(5)).cod_generado;
+                        //convertimos el color a entero
+                        color=color.replace("#","");
+                        color =Integer.valueOf(color,16)+"";
+                        Codigo_dasm+="//-------------------------Nativa CUADRADO --------------------------\n";                        
+                        Codigo_dasm+=x;
+                        Codigo_dasm+=y;
+                        Codigo_dasm+=color+"\n";
+                        Codigo_dasm+=ancho;
+                        Codigo_dasm+=alto;
+                        Codigo_dasm+=Cadena.Call+Cadena.quadrate+"\n";
+                        // </editor-fold>
+                        break;
+                    } 
 //=================================== Funcion nativa Ovalo ====================================                 
                     case Cadena.OVALO:{
                         // <editor-fold defaultstate="collapsed">
-
+                        linea= hijo.Hijos.get(0).Token.getLinea();
+                        String x =comprobarExp(hijo.Hijos.get(1)).cod_generado;
+                        String y = comprobarExp(hijo.Hijos.get(2)).cod_generado;
+                        String color = hijo.Hijos.get(3).Token.getValor().toString();        
+                        String ancho= comprobarExp(hijo.Hijos.get(4)).cod_generado;                        
+                        String alto= comprobarExp(hijo.Hijos.get(5)).cod_generado;
+                        //convertimos el color a entero
+                        color=color.replace("#","");
+                        int col =Integer.valueOf(color,16);
+                        Codigo_dasm+="//-------------------------Nativa OVALO --------------------------\n";                        
+                        Codigo_dasm+=x;
+                        Codigo_dasm+=y;
+                        Codigo_dasm+=col+"\n";
+                        Codigo_dasm+=ancho;
+                        Codigo_dasm+=alto;
+                        Codigo_dasm+=Cadena.Call+Cadena.oval+"\n";
                         // </editor-fold>
                         break;
                     }                                                
 //=================================== Funcion nativa PUNTO ====================================                 
                     case Cadena.PUNTO:{
                         // <editor-fold defaultstate="collapsed">
-
+                        linea= hijo.Hijos.get(0).Token.getLinea();
+                        String x = comprobarExp(hijo.Hijos.get(1)).cod_generado;
+                        String y = comprobarExp(hijo.Hijos.get(2)).cod_generado;
+                        String color = hijo.Hijos.get(3).Token.getValor().toString();        
+                        String diametro = comprobarExp(hijo.Hijos.get(4)).cod_generado;                        
+                        //convertimos el color a entero
+                        color=color.replace("#","");
+                        int col = Integer.valueOf(color,16);
+                        Codigo_dasm+="//-------------------------Nativa PUNTO --------------------------\n";
+                        Codigo_dasm+=x;
+                        Codigo_dasm+=y;
+                        Codigo_dasm+=col+"\n";
+                        Codigo_dasm+=diametro;
+                        Codigo_dasm+=Cadena.Call+Cadena.point+"\n";                                                
                         // </editor-fold>
                         break;
                     }                                                                                                                                        
@@ -5999,21 +6137,23 @@ public class Traductor extends Thread{
         return false;
     }
     
-    private int calcularTamano(Nodo nodo){
-        int tama=0;
-        
+    private int calcularTamano(Nodo nodo) {
+        int tama = 0;
         for (Nodo Hijo : nodo.Hijos) {
-            if(Hijo!=null){
-                switch (Hijo.Term.getNombre()) {
-                    case Cadena.DA_VAR:
-                        tama++;
-                        break;
-                    case Cadena.DA_ARR:
-                        tama++;
-                        break;
+            if (Hijo != null) {
+                if (Hijo.Term != null) {
+                    switch (Hijo.Term.getNombre()) {
+                        case Cadena.DA_VAR:
+                            tama++;
+                            break;
+                        case Cadena.DA_ARR:
+                            tama++;
+                            break;
+                    }
                 }
-            }            
-        }        
+
+            }
+        }
         return tama;
     }
     
@@ -6105,6 +6245,29 @@ public class Traductor extends Thread{
     
     public  static void reset(){
         codigo_generado="//---------------------- Funciones Nativas -------------------------\n";    
+    }
+    
+    private int cant_anidamiento(){
+        int anidado=0;
+        for (int j = pilaSimbols.size() - 1; j > -1; j--) {
+            if (!pilaSimbols.get(j).equals(Global)) {
+                anidado+=pilaSimbols.get(j).tamanio;
+            }
+        }
+        return anidado;
+    }
+    
+    private int cant_anidamiento(String etq){
+        int anidado=0;
+        for (int j = pilaSimbols.size() - 1; j > -1; j--) {
+            if (pilaSimbols.get(j).etq_fin.equals(etq)){
+                anidado+=pilaSimbols.get(j).tamanio;
+                return  anidado;
+            }else{
+                anidado+=pilaSimbols.get(j).tamanio;
+            }
+        }
+        return anidado;
     }
     
     @Override

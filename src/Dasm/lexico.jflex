@@ -64,6 +64,7 @@ ENTER   = [\ \n]
     "Div"           {  return new Symbol(sym.Div, yyline,yycolumn,yytext()); }
     "Mod"           {  return new Symbol(sym.Mod, yyline,yycolumn,yytext()); }
     "Call"          {  return new Symbol(sym.Call, yyline,yycolumn,yytext()); }
+    "Ret"           {  return new Symbol(sym.Ret, yyline,yycolumn,yytext()); }
     "calc"          {  return new Symbol(sym.Calc, yyline,yycolumn,yytext()); }    
     "Function"      {  return new Symbol(sym.Function, yyline,yycolumn,yytext()); } 
     "End"           {  return new Symbol(sym.End, yyline,yycolumn,yytext()); }

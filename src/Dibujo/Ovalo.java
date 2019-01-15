@@ -27,6 +27,6 @@ public class Ovalo {
     }
     public void paint(Graphics2D g2d) {
         g2d.setColor( Color.decode(color));
-        g2d.drawOval(posX, posY,ancho,alto);        
+        g2d.fillOval(posX, posY,ancho,alto);        
     }
 }

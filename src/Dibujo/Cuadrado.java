@@ -28,7 +28,7 @@ public class Cuadrado {
     }
     public void paint(Graphics2D g2d) {
         g2d.setColor( Color.decode(color));
-        g2d.drawRect(posX, posY,ancho,alto);        
+        g2d.fillRect(posX, posY,ancho,alto);        
     }
     
 }

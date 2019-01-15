@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package TraductorDpp;;
+package EjecucionDS;
 
 import java.util.HashMap;
 
@@ -12,20 +12,14 @@ import java.util.HashMap;
  * @author Luis
  */
 public class TablaSimbolos {
-    
     public String Nivel;
     public String tipo;
     public boolean retorno;
     public boolean  detener;
     public boolean  continuar;
-    public String etq_ini="";
-    public String etq_fin="";
-    public String etq_fin_padre="";
-    public String etq_ini_padre="";
+    public String etq_ini;
+    public String etq_fin;
     public int tamanio=0;
-    public int tam_amb_ant=0;
-    public boolean  bre_con=false;
-    public int tam_amb_ant_bc=0;
     
     public HashMap t;
     
@@ -39,16 +33,15 @@ public class TablaSimbolos {
     }
         
     public void insertar(String nombre,Simbolo simbolo){
-        t.put(nombre,simbolo);
+        t.put(nombre.toLowerCase(),simbolo);
         System.out.println("Se inserto una nueva variable: "+nombre+" Nivel : "+Nivel);
     }
     
     public Simbolo retornaSimbolo(String nombre){
-        return (Simbolo)t.get(nombre);
+        return (Simbolo)t.get(nombre.toLowerCase());
     }
     
     public boolean existeSimbolo(String Nombre){ 
-        return retornaSimbolo(Nombre)!=null;
+        return retornaSimbolo(Nombre.toLowerCase())!=null;
     }
-            
 }
